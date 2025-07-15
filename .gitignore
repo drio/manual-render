@@ -6,3 +6,9 @@ node_modules
 *.vim
 .env*
 *.mp4
+x11lib
+toy*
+node_modules
+*.vim
+.env*
+*.mp4
