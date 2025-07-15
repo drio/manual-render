@@ -13,4 +13,7 @@ lsp:
 	bear -- make clean
 	bear -- make
 
+libx11:
+	git clone https://gitlab.freedesktop.org/xorg/lib/libx11.git
+
 .PHONY: clean lsp

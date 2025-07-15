@@ -1,6 +1,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 typedef struct {
@@ -48,14 +49,20 @@ int main() {
     gc = XCreateGC(display, window, 0, NULL);
     XSetForeground(display, gc, BlackPixel(display, screen));
     
-    // Some test points and lines
+    // 4 points forming a rectangle
     Point points[] = {
-        {100, 100}, {200, 150}, {300, 200}, {400, 100}
+        {200, 150},  // top-left
+        {400, 150},  // top-right
+        {400, 300},  // bottom-right
+        {200, 300}   // bottom-left
     };
+    
+    // Lines connecting the points to form a rectangle
     Line lines[] = {
-        {{50, 50}, {150, 150}},
-        {{200, 100}, {400, 300}},
-        {{300, 50}, {500, 250}}
+        {{200, 150}, {400, 150}},  // top edge
+        {{400, 150}, {400, 300}},  // right edge  
+        {{400, 300}, {200, 300}},  // bottom edge
+        {{200, 300}, {200, 150}}   // left edge
     };
     
     // Main event loop
@@ -74,8 +81,8 @@ int main() {
                         6, 6, 0, 360 * 64);
                 }
                 
-                // Draw lines
-                for (int i = 0; i < 3; i++) {
+                // Draw lines (4 lines forming rectangle)
+                for (int i = 0; i < 4; i++) {
                     XDrawLine(display, window, gc,
                         lines[i].start.x, lines[i].start.y,
                         lines[i].end.x, lines[i].end.y);
