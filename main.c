@@ -1,7 +1,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 typedef struct {
@@ -12,12 +11,19 @@ typedef struct {
     Point start, end;
 } Line;
 
+// world vs screen(camera)
+typedef struct {
+    float center_x, center_y;  // What world point is at screen center
+    float zoom;                // Zoom level (1.0 = normal)
+} Camera;
+
 int main() {
     Display *display;
     Window window;
     XEvent event;
     int screen;
     GC gc;
+    Camera camera;
     
     // Open connection to X server
     display = XOpenDisplay(NULL);
@@ -48,6 +54,11 @@ int main() {
     // Create graphics context
     gc = XCreateGC(display, window, 0, NULL);
     XSetForeground(display, gc, BlackPixel(display, screen));
+    
+    // Initialize camera (neutral - no transformation yet)
+    camera.center_x = 300.0f;  // Center of our current square
+    camera.center_y = 225.0f;  // Center of our current square  
+    camera.zoom = 1.0f;        // No zoom
     
     // 4 points forming a rectangle
     Point points[] = {
