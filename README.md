@@ -4,7 +4,7 @@ This is a repo to learn the math behind rendering 2D/3D scenes.
 
 What you are seeing here is a 2D "scene" where we have four 2D vectors (points)
 in space. The key observation is that we are working in our world whatever that
-is. And we have **units**. Our objects will be created by just adding
+is. And we have units. Our objects will be created by just adding
 points/vectors (and other things like lines) in our world.
 
 For example, what you are looking at has:
