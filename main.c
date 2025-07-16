@@ -84,6 +84,8 @@ int main() {
     XSelectInput(display, window, ExposureMask | KeyPressMask | ButtonPressMask);
     XMapWindow(display, window);
     gc = XCreateGC(display, window, 0, NULL);
+    Font font = XLoadFont(display, "10x20");
+    XSetFont(display, gc, font);
     XSetForeground(display, gc, WhitePixel(display, screen));
 
     camera.center_x = 1.0f;
