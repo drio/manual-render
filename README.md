@@ -1,5 +1,15 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## A note on the implementation
+
+The purpose of this project is to learn from the bottom up. For that reason, it’s
+all written in C, using the X11 library directly.
+
+Now that I understand the basics, I’m going to move to
+[raylib](https://www.raylib.com). I’ll still code from first principles, but I
+won’t have to deal with the outdated API of X11 just to paint pixels on the screen.
+
+
 ![](./manual-render.gif)
 
 What you are seeing here is a 2D "scene" where we have four 2D vectors (points)
