@@ -42,7 +42,7 @@ Our camera defines:
 
 We need to map between our world and the camera. For that we have:
 
-```
+```c
 Point world_to_screen(float world_x, float world_y, Camera* cam, int screen_width, int screen_height) {
     Point screen_point;
     screen_point.x = (int)((world_x - cam->center_x) * cam->zoom + screen_width / 2);
