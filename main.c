@@ -1,8 +1,10 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 typedef struct {
     int x, y;
@@ -17,12 +19,17 @@ typedef struct {
     float zoom;                // Zoom level (1.0 = normal)
 } Camera;
 
-// Transform world coordinates to screen coordinates
-Point world_to_screen(float world_x, float world_y, Camera* cam) {
-    // For now, just pass through unchanged (no transformation)
+// Given the current position of the camera and zoom level, where on my camera's LCD screen 
+// will this world point appear?
+Point world_to_screen(float world_x, float world_y, Camera* cam, int screen_width, int screen_height) {
     Point screen_point;
-    screen_point.x = (int)world_x;
-    screen_point.y = (int)world_y;
+    screen_point.x = (int)
+        (
+        (world_x - cam->center_x)  // How far is the point (x coordinate) from where I am aiming the camera?
+        * cam->zoom                // How big do distances appear? 1 unit spans 100 pixels (assuming zoom = 100)
+        + screen_width/2           // Where on my camera/screen does that point goes (x coordinates)
+        );
+    screen_point.y = (int)((world_y - cam->center_y) * cam->zoom + screen_height/2);
     return screen_point;
 }
 
@@ -48,7 +55,7 @@ int main() {
         display,
         RootWindow(display, screen),
         10, 10,           // x, y position
-        800, 600,         // width, height
+        SCREEN_WIDTH, SCREEN_HEIGHT,         // width, height
         1,                // border width
         BlackPixel(display, screen),
         WhitePixel(display, screen)
@@ -64,25 +71,26 @@ int main() {
     gc = XCreateGC(display, window, 0, NULL);
     XSetForeground(display, gc, BlackPixel(display, screen));
 
-    // Initialize camera (neutral - no transformation yet)
-    camera.center_x = 300.0f;  // Center of our current square
-    camera.center_y = 225.0f;  // Center of our current square  
-    camera.zoom = 1.0f;        // No zoom
+    // Initialize camera to look at our world square
+    camera.center_x = 1.0f;    // Look at center of our 0-2 square
+    camera.center_y = 1.0f;    // Look at center of our 0-2 square
+    camera.zoom = 100.0f;      // Make 1 world unit = 100 pixels
 
-    // 4 points forming a rectangle
+    // 4 points forming a rectangle in WORLD coordinates
+    // Let's say our world square goes from (0,0) to (2,2)
     Point points[] = {
-        {200, 150},  // top-left
-        {400, 150},  // top-right
-        {400, 300},  // bottom-right
-        {200, 300}   // bottom-left
+        {0, 0},    // bottom-left in world
+        {2, 0},    // bottom-right in world
+        {2, 2},    // top-right in world
+        {0, 2}     // top-left in world
     };
 
-    // Lines connecting the points to form a rectangle
+    // Lines connecting the points to form a rectangle (world coordinates)
     Line lines[] = {
-        {{200, 150}, {400, 150}},  // top edge
-        {{400, 150}, {400, 300}},  // right edge  
-        {{400, 300}, {200, 300}},  // bottom edge
-        {{200, 300}, {200, 150}}   // left edge
+        {{0, 0}, {2, 0}},    // bottom edge
+        {{2, 0}, {2, 2}},    // right edge
+        {{2, 2}, {0, 2}},    // top edge
+        {{0, 2}, {0, 0}}     // left edge
     };
 
     // Main event loop
@@ -96,23 +104,23 @@ int main() {
 
                 // Draw points
                 for (int i = 0; i < 4; i++) {
-                    Point screen_point = world_to_screen(points[i].x, points[i].y, &camera);
-                    XFillArc(display, window, gc, 
-                        screen_point.x - 3, screen_point.y - 3, 
+                    Point screen_point = world_to_screen(points[i].x, points[i].y, &camera, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    XFillArc(display, window, gc,
+                        screen_point.x - 3, screen_point.y - 3,
                         6, 6, 0, 360 * 64);
                 }
 
                 // Draw lines (4 lines forming rectangle)
                 for (int i = 0; i < 4; i++) {
-                    Point start = world_to_screen(lines[i].start.x, lines[i].start.y, &camera);
-                    Point end = world_to_screen(lines[i].end.x, lines[i].end.y, &camera);
+                    Point start = world_to_screen(lines[i].start.x, lines[i].start.y, &camera, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    Point end = world_to_screen(lines[i].end.x, lines[i].end.y, &camera, SCREEN_WIDTH, SCREEN_HEIGHT);
                     XDrawLine(display, window, gc,
                         start.x, start.y, end.x, end.y);
                 }
 
                 // Draw coordinate axes
-                XDrawLine(display, window, gc, 0, 300, 800, 300); // x-axis
-                XDrawLine(display, window, gc, 400, 0, 400, 600);  // y-axis
+                XDrawLine(display, window, gc, 0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2); // x-axis
+                XDrawLine(display, window, gc, SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);  // y-axis
 
                 break;
 
@@ -121,7 +129,7 @@ int main() {
                 goto cleanup;
 
             case ButtonPress:
-                printf("Mouse clicked at (%d, %d)\n", 
+                printf("Mouse clicked at (%d, %d)\n",
                     event.xbutton.x, event.xbutton.y);
                 break;
         }
