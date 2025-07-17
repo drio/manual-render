@@ -19,6 +19,7 @@ Then we need to map that object (the rectangle) from the world to the camera/scr
 For that we have a dedicated function that performs the map and uses raylib to render
 the image into the screen.
 
+![](./assets/adding-img.gif)
 
 ## Migrating to raylib 
 
@@ -37,7 +38,7 @@ Now that I understand the basics, I’m going to move to
 won’t have to deal with the outdated API of X11 just to paint pixels on the screen.
 
 
-![](./manual-render.gif)
+![](./assets/manual-render.gif)
 
 What you are seeing here is a 2D "scene" where we have four 2D vectors (points)
 in space. The key observation is that we are working in our world whatever that
