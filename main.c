@@ -15,16 +15,40 @@ typedef struct {
 typedef struct {
     float center_x, center_y;
     float zoom;
-} ViewCamera;
+} WorldCamera;
 
-Point world_to_screen(float world_x, float world_y, ViewCamera* cam, int screen_width, int screen_height) {
+typedef struct {
+    float x, y;          // World position
+    float width, height; // World dimensions
+    Texture2D texture;   // The loaded texture
+} WorldImage;
+
+
+
+Point world_to_screen(float world_x, float world_y, WorldCamera* cam, int screen_width, int screen_height) {
     Point screen_point;
     screen_point.x = (int)((world_x - cam->center_x) * cam->zoom + screen_width / 2);
     screen_point.y = (int)((world_y - cam->center_y) * cam->zoom + screen_height / 2);
     return screen_point;
 }
 
-void draw_scene(ViewCamera* camera) {
+void draw_image(WorldImage* img, WorldCamera* camera) {
+    Point screen_pos = world_to_screen(img->x, img->y, camera, SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    // Scale the image size based on zoom
+    float screen_width = img->width * camera->zoom;
+    float screen_height = img->height * camera->zoom;
+    
+
+    Rectangle source = (Rectangle){0, 0, img->texture.width, img->texture.height};
+    Rectangle dest = (Rectangle){screen_pos.x, screen_pos.y, screen_width, screen_height};
+    Vector2 origin = {0,0};
+    float rotation = 0.0f;
+
+    DrawTexturePro(img->texture, source, dest, origin, rotation, WHITE);
+}
+
+void draw_scene(WorldCamera* camera) {
     ClearBackground(BLACK);
 
     Point points[] = {
@@ -59,13 +83,23 @@ void draw_scene(ViewCamera* camera) {
 }
 
 int main() {
-    ViewCamera camera;
+    WorldCamera camera;
     camera.center_x = 1.0f;
     camera.center_y = 1.0f;
     camera.zoom = 100.0f;
 
+
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Manual Render");
     SetTargetFPS(60);
+
+    Texture2D texture = LoadTexture("assets/rc.png");
+
+    WorldImage rc_image;
+    rc_image.x = 0.5f;      // World X position
+    rc_image.y = 0.5f;      // World Y position
+    rc_image.width = 1.0f;  // World width
+    rc_image.height = 1.0f; // World height
+    rc_image.texture = texture;
 
     while (!WindowShouldClose()) {
         // Handle input
@@ -101,9 +135,11 @@ int main() {
         // Draw
         BeginDrawing();
         draw_scene(&camera);
+        draw_image(&rc_image, &camera);  // Draw the image
         EndDrawing();
     }
 
+    UnloadTexture(texture);
     CloseWindow();
     return 0;
 }

@@ -7,9 +7,10 @@ manual-render: main.c
 	$(CC) $(CFLAGS) main.c -o $@ $(LIBS)
 
 clean:
-	rm -f $(TOOL) compile_commands.json
+	rm -f $(TOOL)
 
 lsp:
+	rm -f compile_commands.json
 	bear -- make clean
 	bear -- make
 
