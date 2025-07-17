@@ -1,10 +1,31 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
-## Migrating to raylib ([commit](https://github.com/drio/manual-render/commit/81569a4d56458539322e577ebe107681cff34067))
+## Drawing images
+
+I wanted to add a raster image (png) into my world. 
+The process is the same as vectors. We need to know what position and space
+the new object is going to take in our world, we define this type to capture that:
+
+```c
+typedef struct {
+    float x, y;          // World position
+    float width, height; // World dimensions
+    Texture2D texture;   // The loaded texture
+} WorldImage;
+```
+
+Then we need to map that object (the rectangle) from the world to the camera/screen. 
+
+For that we have a dedicated function that performs the map and uses raylib to render
+the image into the screen.
+
+
+## Migrating to raylib 
 
 I wanted to start with X11 to make sure I had full control of what I was doing. 
 Turns out I can still use [raylib](https://www.raylib.com/cheatsheet/cheatsheet.html) and
-still keep all the control. Basically I just use raylib to draw pixels.
+still keep all the control. Basically I just use raylib to draw pixels. You can see the
+migration ([commit here](https://github.com/drio/manual-render/commit/81569a4d56458539322e577ebe107681cff34067)).
 
 ## A note on the implementation
 

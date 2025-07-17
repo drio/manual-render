@@ -33,18 +33,20 @@ Point world_to_screen(float world_x, float world_y, WorldCamera* cam, int screen
 }
 
 void draw_image(WorldImage* img, WorldCamera* camera) {
+    // where do the (x,y) coordinate of our image in our world map in the screen?
     Point screen_pos = world_to_screen(img->x, img->y, camera, SCREEN_WIDTH, SCREEN_HEIGHT);
     
-    // Scale the image size based on zoom
+    // Same, but how big the image should be in our screen?
     float screen_width = img->width * camera->zoom;
     float screen_height = img->height * camera->zoom;
-    
 
     Rectangle source = (Rectangle){0, 0, img->texture.width, img->texture.height};
     Rectangle dest = (Rectangle){screen_pos.x, screen_pos.y, screen_width, screen_height};
     Vector2 origin = {0,0};
     float rotation = 0.0f;
 
+    // Now we tell raylib to draw the image/texture with dimensions defined by the 
+    // rectangle created above. 
     DrawTexturePro(img->texture, source, dest, origin, rotation, WHITE);
 }
 
