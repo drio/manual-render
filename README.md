@@ -1,5 +1,11 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## Migrating to raylib ([commit](https://github.com/drio/manual-render/commit/81569a4d56458539322e577ebe107681cff34067))
+
+I wanted to start with X11 to make sure I had full control of what I was doing. 
+Turns out I can still use [raylib](https://www.raylib.com/cheatsheet/cheatsheet.html) and
+still keep all the control. Basically I just use raylib to draw pixels.
+
 ## A note on the implementation
 
 The purpose of this project is to learn from the bottom up. For that reason, it’s
