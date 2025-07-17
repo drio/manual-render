@@ -13,3 +13,5 @@ node_modules
 .env*
 *.mp4
 libx11
+.cache/clangd/index
+manual-render

@@ -1,9 +1,9 @@
 CC = clang
-CFLAGS = -Wall -std=c99
-LIBS = -lX11
-TOOL = toyx11
+CFLAGS = -Wall -std=c99 -I$(HOME)/dev/github.com/raysan5/raylib-5.5/src
+LIBS = -L$(HOME)/dev/github.com/raysan5/raylib-5.5/src -lraylib -lm -lpthread -ldl -lrt -lX11
+TOOL = manual-render
 
-toyx11: main.c
+manual-render: main.c
 	$(CC) $(CFLAGS) main.c -o $@ $(LIBS)
 
 clean:
@@ -13,7 +13,7 @@ lsp:
 	bear -- make clean
 	bear -- make
 
-libx11:
-	git clone https://gitlab.freedesktop.org/xorg/lib/libx11.git
+float:
+	make clean $(TOOL); float-launch ./$(TOOL)
 
-.PHONY: clean lsp
+.PHONY: clean lsp float
