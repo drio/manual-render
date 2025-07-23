@@ -1,6 +1,53 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
-## Drawing images
+##  04: Moving to 3d and refactoring to separate concerns in the rendering pipeline
+
+I have removed the rendering of textures for now. We need to stay with the basics.
+
+Now we have just points and lines but they use 3D coordinates.
+
+In the rendering loop, we render the scene and from there we make calls to world_to_screen_pipeline
+which now calls three separate functions to "pipeline" the different transformations that
+we do to view our 3D world on a 2D screen:
+
+1. World → View (world_to_view)
+- Purpose: Make camera the center of the universe.
+Everything is positioned relative to the camera (we are in our world space).
+
+2. View → Projection (apply_perspective)
+- Purpose: Apply perspective - far things look smaller by dividing X,Y by Z distance
+- This creates the illusion of depth on a flat 2D screen
+
+3. Projection → Screen (projection_to_screen)
+- Purpose: Map to actual pixel coordinates
+
+The key insight: each step isolates one type of transformation, making the math
+clean and debuggable. Instead of mixing camera position + perspective + screen
+mapping in one complex formula, we do each step separately.
+
+Notice there is no zoom now. The zoom is really changing our z coordinate in the camera.
+
+We also fixed a bug where objects behind the camera would reappear flipped.
+Now we properly clip objects that are behind the camera or too close (near plane).
+
+I think now we are in good shape to apply matrices instead of applying math on each point
+coordinate.
+
+What is next? Adding Camera Rotation (Leading to Matrices)
+
+Goal: Add camera rotation capability (look around with mouse/keys), which will naturally force us into
+matrix transformations. Currently our camera can only move around but always looks straight ahead down
+the Z-axis. We want to add yaw (left/right looking) and pitch (up/down looking) like any first-person
+game.
+
+We can start by implementing rotation math manually in world_to_view() with trigonometry. As
+we add more rotation axes (yaw + pitch + roll), the coordinate transformations will become very complex with
+9+ trigonometric calculations per point. This complexity wall will make us desperately need matrices to
+manage the math cleanly. We'll learn matrices out of necessity to solve a real problem, not just
+because they're "the right way".
+
+
+## 03: Drawing images
 
 I wanted to add a raster image (png) into my world. 
 The process is the same as vectors. We need to know what position and space
@@ -21,14 +68,14 @@ the image into the screen.
 
 ![](./assets/adding-img.gif)
 
-## Migrating to raylib 
+## 02: Migrating to raylib 
 
 I wanted to start with X11 to make sure I had full control of what I was doing. 
 Turns out I can still use [raylib](https://www.raylib.com/cheatsheet/cheatsheet.html) and
 still keep all the control. Basically I just use raylib to draw pixels. You can see the
 migration ([commit here](https://github.com/drio/manual-render/commit/81569a4d56458539322e577ebe107681cff34067)).
 
-## A note on the implementation
+## 01: A note on the implementation
 
 The purpose of this project is to learn from the bottom up. For that reason, it’s
 all written in C, using the X11 library directly.

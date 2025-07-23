@@ -34,7 +34,7 @@ Point world_to_view(Point world_point, WorldCamera* cam) {
 // Only X,Y get perspective division because screens only have 2D pixels.
 // Z is preserved for depth sorting/clipping but doesn't affect screen position.
 // fov_scale controls field of view: higher = narrower view (telephoto), lower = wider view (wide-angle).
-Point view_to_projection(Point view_point, float fov_scale) {
+Point apply_perspective(Point view_point, float fov_scale) {
     Point proj_point;
 
     // Clip objects behind camera or too close (near plane)
@@ -61,7 +61,7 @@ Point projection_to_screen(Point proj_point, int screen_width, int screen_height
 // Complete 3D pipeline: World → View → Projection → Screen
 Point world_to_screen_pipeline(Point world_point, WorldCamera* cam, int screen_width, int screen_height) {
     Point view_point = world_to_view(world_point, cam);
-    Point proj_point = view_to_projection(view_point, 100.0f); // fov_scale
+    Point proj_point = apply_perspective(view_point, 100.0f); // fov_scale
     Point screen_point = projection_to_screen(proj_point, screen_width, screen_height);
     return screen_point;
 }
