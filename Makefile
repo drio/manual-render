@@ -15,6 +15,6 @@ lsp:
 	bear -- make
 
 float:
-	make clean $(TOOL); float-launch ./$(TOOL)
+	make clean $(TOOL); sleep 1; float-launch ./$(TOOL)
 
 .PHONY: clean lsp float
