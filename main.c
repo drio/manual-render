@@ -128,6 +128,12 @@ int main() {
         if (IsKeyDown(KEY_RIGHT)) {
             camera.center_x += 1.0f;
         }
+        if (IsKeyDown(KEY_Y)) {
+            camera.center_z -= 1.0f;
+        }
+        if (IsKeyDown(KEY_U)) {
+            camera.center_z += 1.0f;
+        }
         if (IsKeyPressed(KEY_Q)) {
             break;
         }
