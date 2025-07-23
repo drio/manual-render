@@ -2,6 +2,8 @@ This is a repo to learn the math behind rendering 2D/3D scenes.
 
 ##  04: Moving to 3d and refactoring to separate concerns in the rendering pipeline
 
+NOTE: no gif for this step since we haven't added anything extra really.
+
 I have removed the rendering of textures for now. We need to stay with the basics.
 
 Now we have just points and lines but they use 3D coordinates.
