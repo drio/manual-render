@@ -16,3 +16,4 @@ libx11
 .cache/clangd/index
 manual-render
 compile_commands.json
+CLAUDE.local.md
