@@ -1,6 +1,12 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
-## 06:
+## 06: Orbit Camera movement
+
+I have refactored the camera a bit.
+Now we are moving the camera in an orbit around the scene.
+
+![](assets/stage-05.mp5)
+
 
 ## 05: python and camera position plus perspective projection
 
