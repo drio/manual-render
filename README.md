@@ -1,14 +1,41 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
-## 06: Orbit Camera movement
-
-I have refactored the camera a bit.
-Now we are moving the camera in an orbit around the scene.
+## 06: Orbit Camera Movement
+I’ve refactored the camera a bit — it now orbits around the scene.
 
 ![](assets/stage-05.gif)
 
-What is next? I think moving to shaders.
-So we can do all the computations via the GPU. Currently we are doing "software rendering".
+What’s next? I think it’s time to move to shaders, so we can offload all the
+computations to the GPU. Right now, we're doing everything via "software
+rendering."
+
+What are Shaders, and How Do They Relate to Textures? Shaders are small
+programs that run directly on your graphics card (GPU), not the CPU.
+
+Instead of our current approach:
+
+- Calculate 3D-to-2D projection in Python
+- Draw lines and points using SDL2's 2D functions
+- Handle everything pixel-by-pixel on the CPU
+
+We could:
+
+- Send 3D vertex data directly to the GPU
+- Use vertex shaders to handle the 3D-to-2D projection
+- Use fragment shaders to compute the final pixel colors (including textures)
+
+Render entire triangles and polygons in a single GPU operation.
+
+We'll write code for these shaders, and that code runs on the GPU.
+
+Vertex Shaders handle the projection and transformation of vertices, doing in
+parallel what we're currently doing manually in Python.
+
+Fragment (Pixel) Shaders run for every pixel on the screen. They compute the
+final color based on lighting, textures, materials, etc.
+
+After that I think I will have a good mental model to use any 3d library 
+with confidence.
 
 
 ### What Are Shaders and How Do They Relate to Textures?
@@ -50,7 +77,29 @@ to prototype quicker.
 The projection from 3d to 2d is now more advance. First, we use a perspective projection
 which means is more realistic. Also, tell the camera what should it be looking at. 
 
-Let's rewrite next that function using matrices! 
+Writing the 3d to 2d projection manually was a great idea. Basically we can replace each
+of the steps of the pipeline with a matrix. And then we can multiple them to create a 
+single matrix that encodes the transformations you want to do with your vertices. 
+Something that tripped me of a little bit is the fact that you have use 4 dimension matrices
+on our 3d vertices but that is necessary for the math "to work" and compute the transformations
+we want.
+
+I switched to Python (still controlling everything at the pixel level) to
+prototype more quickly.
+
+The 3D-to-2D projection is now more advanced. I'm using a perspective
+projection, which gives a more realistic result. The camera also has a target
+now. We can tell it what to look at.
+
+Writing the projection pipeline by hand turned out to be a great decision. Each
+stage of the transformation can be represented as a matrix. By multiplying
+them, we get a single matrix that encodes all the transformations applied to
+the vertices.
+
+One thing that tripped me up a bit: we have to use 4D vectors for 3D points.
+It's necessary for the math to work out, especially for perspective division
+and other transformations.
+
 
 ##  04: Moving to 3d and refactoring to separate concerns in the rendering pipeline
 
