@@ -7,6 +7,40 @@ Now we are moving the camera in an orbit around the scene.
 
 ![](assets/stage-05.gif)
 
+What is next? I think moving to shaders.
+So we can do all the computations via the GPU. Currently we are doing "software rendering".
+
+
+### What Are Shaders and How Do They Relate to Textures?
+
+Shaders are small programs that run directly on your graphics card (GPU) rather
+than your CPU. 
+
+Instead of our current approach:
+
+Calculate 3D-to-2D projection in Python
+Draw lines and points using SDL2's 2D functions
+Handle everything pixel by pixel on the CPU
+
+We could:
+
+Send our 3D vertex data directly to the GPU.
+Let vertex shaders handle the 3D-to-2D projection.
+Let fragment shaders compute the final pixel colors, including textures
+Render entire triangles/polygons in single GPU operations.
+
+We write code for those shaders and that code runs in the cpu.
+
+Fragment/Pixel Shaders: These run for every pixel that gets drawn on screen and
+can compute the final color of each pixel based on textures, lighting,
+materials, and other factors.
+
+Vertex Shaders: These handle the 3D-to-2D projection that you're currently
+doing in Python, but they do it on the GPU for thousands of vertices
+simultaneously.
+
+Fun fun fun!
+
 
 ## 05: python and camera position plus perspective projection
 
