@@ -27,6 +27,7 @@ class Camera:
     """Simple camera class to group camera-related variables"""
 
     def __init__(self, position=[-500, -300, 500], target=[0, 50, 0], focal_length=500):
+        print(f"camera position= {position}")
         self.position = position
         self.target = target
         self.focal_length = focal_length
@@ -84,29 +85,25 @@ cube_faces = [
     # {"vertices": [1, 2, 6, 5], "color": (100, 255, 255), "name": "right"},  # cyan
 ]
 
-# Create multiple cubes with different sizes and positions
 cubes = [
-    {"pos": [0, -50, 0], "scale": 50, "color_tint": (255, 255, 255), "name": "center"},
     {
-        "pos": [250, -50, 100],
+        "pos": [0, -50, 0],
+        "scale": 50,
+        "color_tint": (255, 255, 255),
+        "name": "center",
+    },
+    {
+        "pos": [250, -80, 100],
         "scale": 80,
         "color_tint": (255, 200, 200),
         "name": "large",
     },
     {
-        "pos": [-250, -50, -100],
+        "pos": [-250, -30, -100],
         "scale": 30,
         "color_tint": (200, 255, 200),
         "name": "small",
     },
-    # {"pos": [80, 60, -120], "scale": 120, "color_tint": (200, 200, 255), "name": "big"},
-    # {
-    #     "pos": [-80, 20, 100],
-    #     "scale": 40,
-    #     "color_tint": (255, 255, 200),
-    #     "name": "medium",
-    # },
-    # {"pos": [0, 10, -200], "scale": 20, "color_tint": (255, 200, 255), "name": "tiny"},
 ]
 
 
@@ -389,12 +386,14 @@ def draw_axes(renderer, camera):
 # Colors
 BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
-# Create camera instance
-camera = Camera(position=[-300, -100, 400], target=[0, 40, 0], focal_length=600)
-# Camera orbit parameters
+# Camera positioned above ground, looking at cubes above ground
+# camera = Camera(position=[200, -300, 800], target=[0, 0, 0], focal_length=600)
+camera = Camera(position=[400, -200, 800], target=[0, 0, 0], focal_length=600)
+
+# Orbit parameters that make sense
 orbit_radius = 800  # Distance from center
-orbit_height = -100  # Y position (height above ground)
-orbit_speed = 0.5  # Rotation speed (radians per second)
+orbit_height = -200  # Y position ABOVE ground
+orbit_speed = 0.5  # Rotation speed
 
 
 # Choose which projection method to use:
@@ -419,7 +418,6 @@ while running:
     # Calculate current time and camera angle
     current_time = time.time() - start_time
     orbit_angle = current_time * orbit_speed
-
     # Update camera position to orbit around the scene
     camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
