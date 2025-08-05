@@ -1,5 +1,15 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## 05: python and camera position plus perspective projection
+
+I moved to python (still controlling everything at pixel level). Just wanted to be able
+to prototype quicker. 
+
+The projection from 3d to 2d is now more advance. First, we use a perspective projection
+which means is more realistic. Also, tell the camera what should it be looking at. 
+
+Let's rewrite next that function using matrices! 
+
 ##  04: Moving to 3d and refactoring to separate concerns in the rendering pipeline
 
 NOTE: no gif for this step since we haven't added anything extra really.

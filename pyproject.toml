@@ -1,19 +1,16 @@
 [project]
-name = "math-4prog"
+name = "manual-render"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "ipython>=9.4.0",
-    "jupyter>=1.1.1",
-    "matplotlib>=3.10.5",
     "numpy>=2.3.2",
     "pygame>=2.6.1",
     "pyqt5>=5.15.11",
     "pysdl2>=0.9.17",
     "pysdl2-dll>=2.32.0",
-    "raylib>=5.5.0.2",
     "watchdog>=6.0.0",
     "watchfiles>=1.1.0",
 ]
