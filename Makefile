@@ -3,6 +3,8 @@ CFLAGS = -Wall -std=c99 -I$(HOME)/dev/github.com/raysan5/raylib-5.5/src
 LIBS = -L$(HOME)/dev/github.com/raysan5/raylib-5.5/src -lraylib -lm -lpthread -ldl -lrt -lX11
 TOOL = manual-render
 
+.PHONY: clean lsp float notebook watch
+
 manual-render: main.c
 	$(CC) $(CFLAGS) main.c -o $@ $(LIBS)
 
@@ -17,4 +19,8 @@ lsp:
 float:
 	make clean $(TOOL); sleep 1; float-launch ./$(TOOL)
 
-.PHONY: clean lsp float
+watch:
+	uv run watchfiles ./main.py
+
+notebook:
+	uv run jupyter notebook
