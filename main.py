@@ -1,6 +1,7 @@
 #!./.venv/bin/python
 import ctypes
 import math
+import time
 
 import numpy as np
 import sdl2
@@ -29,6 +30,13 @@ class Camera:
         self.position = position
         self.target = target
         self.focal_length = focal_length
+
+    def update_orbit(self, angle, radius=300, height=200):
+        """Update camera position to orbit around the target"""
+        # Calculate new position using circular motion
+        self.position[0] = radius * math.cos(angle)  # X position
+        self.position[1] = height  # Y position (constant)
+        self.position[2] = radius * math.sin(angle)  # Z position
 
 
 def create_cube_vertices(scale=50):
@@ -78,22 +86,27 @@ cube_faces = [
 
 # Create multiple cubes with different sizes and positions
 cubes = [
-    {"pos": [0, 25, 0], "scale": 50, "color_tint": (255, 255, 255), "name": "center"},
-    {"pos": [120, 40, 80], "scale": 80, "color_tint": (255, 200, 200), "name": "large"},
+    {"pos": [0, -50, 0], "scale": 50, "color_tint": (255, 255, 255), "name": "center"},
     {
-        "pos": [-100, 15, -50],
+        "pos": [250, -50, 100],
+        "scale": 80,
+        "color_tint": (255, 200, 200),
+        "name": "large",
+    },
+    {
+        "pos": [-250, -50, -100],
         "scale": 30,
         "color_tint": (200, 255, 200),
         "name": "small",
     },
-    {"pos": [80, 60, -120], "scale": 120, "color_tint": (200, 200, 255), "name": "big"},
-    {
-        "pos": [-80, 20, 100],
-        "scale": 40,
-        "color_tint": (255, 255, 200),
-        "name": "medium",
-    },
-    {"pos": [0, 10, -200], "scale": 20, "color_tint": (255, 200, 255), "name": "tiny"},
+    # {"pos": [80, 60, -120], "scale": 120, "color_tint": (200, 200, 255), "name": "big"},
+    # {
+    #     "pos": [-80, 20, 100],
+    #     "scale": 40,
+    #     "color_tint": (255, 255, 200),
+    #     "name": "medium",
+    # },
+    # {"pos": [0, 10, -200], "scale": 20, "color_tint": (255, 200, 255), "name": "tiny"},
 ]
 
 
@@ -378,6 +391,11 @@ BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
 # Create camera instance
 camera = Camera(position=[-300, -100, 400], target=[0, 40, 0], focal_length=600)
+# Camera orbit parameters
+orbit_radius = 800  # Distance from center
+orbit_height = -100  # Y position (height above ground)
+orbit_speed = 0.5  # Rotation speed (radians per second)
+
 
 # Choose which projection method to use:
 project_3d_to_2d = project_3d_to_2d_direct  # Use direct calculation
@@ -387,6 +405,7 @@ print(f"Using projection method: {project_3d_to_2d.__name__}")
 # Main loop
 running = True
 event = sdl2.SDL_Event()
+start_time = time.time()  # Use real time for smooth animation
 
 # X axis (Red): Left ← → Right (negative X is left, positive X is right)
 # Y axis (Green): Down ← → Up (negative Y is down, positive Y is up)
@@ -396,6 +415,13 @@ while running:
     while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
         if event.type == sdl2.SDL_QUIT:
             running = False
+
+    # Calculate current time and camera angle
+    current_time = time.time() - start_time
+    orbit_angle = current_time * orbit_speed
+
+    # Update camera position to orbit around the scene
+    camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
     # Clear screen
     renderer.color = BLACK

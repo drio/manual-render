@@ -1,5 +1,7 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## 06:
+
 ## 05: python and camera position plus perspective projection
 
 I moved to python (still controlling everything at pixel level). Just wanted to be able
