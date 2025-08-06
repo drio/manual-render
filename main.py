@@ -59,50 +59,69 @@ def create_cube_vertices(scale=50):
     )
 
 
-# Define edges (which vertices to connect)
-cube_edges = [
-    (0, 1),
-    (1, 2),
-    (2, 3),
-    (3, 0),  # back face
-    (4, 5),
-    (5, 6),
-    (6, 7),
-    (7, 4),  # front face
-    (0, 4),
-    (1, 5),
-    (2, 6),
-    (3, 7),  # connecting edges
-]
+# Geometry definitions (shared by all instances of the same type)
+# Provides a template to create cube instances
+cube_geometry = {
+    "edges": [
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (3, 0),  # back face
+        (4, 5),
+        (5, 6),
+        (6, 7),
+        (7, 4),  # front face
+        (0, 4),
+        (1, 5),
+        (2, 6),
+        (3, 7),  # connecting edges
+    ]
+}
 
-# Define faces with different colors
-cube_faces = [
-    # {"vertices": [0, 1, 2, 3], "color": (100, 100, 255), "name": "back"},  # blue
-    # {"vertices": [4, 5, 6, 7], "color": (255, 100, 100), "name": "front"},  # red
-    # {"vertices": [0, 1, 5, 4], "color": (100, 255, 100), "name": "bottom"},  # green
-    # {"vertices": [2, 3, 7, 6], "color": (255, 255, 100), "name": "top"},  # yellow
-    # {"vertices": [0, 3, 7, 4], "color": (255, 100, 255), "name": "left"},  # magenta
-    # {"vertices": [1, 2, 6, 5], "color": (100, 255, 255), "name": "right"},  # cyan
-]
+axes_geometry = {
+    "length": 100,
+    "colors": {
+        "x": (255, 0, 0),  # Red
+        "y": (0, 255, 0),  # Green
+        "z": (0, 0, 255),  # Blue
+    },
+}
 
-cubes = [
+# Unified scene objects data structure
+scene_objects = [
     {
+        "type": "cube",
         "pos": [0, -50, 0],
         "scale": 50,
-        "color_tint": (255, 255, 255),
-        "name": "center",
+        "color": (255, 255, 255),
+        "name": "center_cube",
     },
     {
+        "type": "cube",
         "pos": [250, -80, 100],
         "scale": 80,
-        "color_tint": (255, 200, 200),
-        "name": "large",
+        "color": (255, 200, 200),
+        "name": "large_cube",
     },
     {
+        "type": "cube",
         "pos": [-250, -30, -100],
         "scale": 30,
-        "color_tint": (200, 255, 200),
-        "name": "small",
+        "color": (200, 255, 200),
+        "name": "small_cube",
+    },
+    {
+        "type": "ground_plane",
+        "pos": [0, 0, 0],
+        "size": 400,
+        "spacing": 50,
+        "color": (60, 60, 60),
+        "name": "ground",
+    },
+    {
+        "type": "axes",
+        "pos": [0, 0, 0],
+        "name": "coordinate_axes",
     },
 ]
 
@@ -301,13 +320,13 @@ def draw_ground_plane(renderer, camera, size=400, spacing=50):
         renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
 
 
-def draw_cube(renderer, cube_data, camera):
+def draw_cube(renderer, obj_data, camera):
     """Draw a single cube at a given position with given scale"""
     # Create vertices for this cube
-    vertices = create_cube_vertices(cube_data["scale"])
+    vertices = create_cube_vertices(obj_data["scale"])
 
     # Translate vertices to cube position
-    translated_vertices = vertices + np.array(cube_data["pos"])
+    translated_vertices = vertices + np.array(obj_data["pos"])
 
     # Project all vertices to 2D
     projected_vertices = []
@@ -317,7 +336,7 @@ def draw_cube(renderer, cube_data, camera):
 
     # Draw edges
     renderer.color = sdl2.ext.Color(200, 200, 200, 255)  # Light gray for edges
-    for edge in cube_edges:
+    for edge in cube_geometry["edges"]:
         start_vertex = projected_vertices[edge[0]]
         end_vertex = projected_vertices[edge[1]]
 
@@ -326,31 +345,22 @@ def draw_cube(renderer, cube_data, camera):
                 (start_vertex[0], start_vertex[1], end_vertex[0], end_vertex[1])
             )
 
-    # Draw face centers with tinted colors
-    for face in cube_faces:
-        # Calculate face center
-        face_vertices = [translated_vertices[i] for i in face["vertices"]]
-        center = np.mean(face_vertices, axis=0)
 
-        # Project to 2D
-        center_2d = project_3d_to_2d(center, camera)
-
-        if center_2d:
-            # Apply color tint
-            tinted_color = apply_color_tint(face["color"], cube_data["color_tint"])
-            renderer.color = sdl2.ext.Color(
-                tinted_color[0], tinted_color[1], tinted_color[2], 255
-            )
-
-            # Scale dot size with cube size
-            dot_size = max(3, int(cube_data["scale"] / 15))
-            draw_circle_filled(renderer, int(center_2d[0]), int(center_2d[1]), dot_size)
+def render_scene(renderer, camera):
+    """Render all objects in the scene based on their type"""
+    for obj in scene_objects:
+        if obj["type"] == "ground_plane":
+            draw_ground_plane(renderer, camera, obj["size"], obj["spacing"])
+        elif obj["type"] == "axes":
+            draw_axes(renderer, camera)
+        elif obj["type"] == "cube":
+            draw_cube(renderer, obj, camera)
 
 
 def draw_axes(renderer, camera):
     """Draw the 3D coordinate axes"""
     origin = np.array([0, 0, 0])
-    axis_length = 100  # Shorter axes so they don't dominate
+    axis_length = axes_geometry["length"]
 
     # Define axis endpoints
     x_axis = np.array([axis_length, 0, 0])
@@ -364,21 +374,24 @@ def draw_axes(renderer, camera):
     z_axis_2d = project_3d_to_2d(z_axis, camera)
 
     if origin_2d:
-        # X axis - Red
+        # X axis
         if x_axis_2d:
-            renderer.color = sdl2.ext.Color(255, 0, 0, 255)
+            color = axes_geometry["colors"]["x"]
+            renderer.color = sdl2.ext.Color(color[0], color[1], color[2], 255)
             renderer.draw_line((origin_2d[0], origin_2d[1], x_axis_2d[0], x_axis_2d[1]))
             draw_circle_filled(renderer, x_axis_2d[0], x_axis_2d[1], 3)
 
-        # Y axis - Green
+        # Y axis
         if y_axis_2d:
-            renderer.color = sdl2.ext.Color(0, 255, 0, 255)
+            color = axes_geometry["colors"]["y"]
+            renderer.color = sdl2.ext.Color(color[0], color[1], color[2], 255)
             renderer.draw_line((origin_2d[0], origin_2d[1], y_axis_2d[0], y_axis_2d[1]))
             draw_circle_filled(renderer, y_axis_2d[0], y_axis_2d[1], 3)
 
-        # Z axis - Blue
+        # Z axis
         if z_axis_2d:
-            renderer.color = sdl2.ext.Color(0, 0, 255, 255)
+            color = axes_geometry["colors"]["z"]
+            renderer.color = sdl2.ext.Color(color[0], color[1], color[2], 255)
             renderer.draw_line((origin_2d[0], origin_2d[1], z_axis_2d[0], z_axis_2d[1]))
             draw_circle_filled(renderer, z_axis_2d[0], z_axis_2d[1], 3)
 
@@ -425,15 +438,8 @@ while running:
     renderer.color = BLACK
     renderer.clear()
 
-    # Draw the ground plane first (so it appears behind everything)
-    draw_ground_plane(renderer, camera)
-
-    # Draw coordinate axes
-    draw_axes(renderer, camera)
-
-    # Draw all cubes
-    for cube in cubes:
-        draw_cube(renderer, cube, camera)
+    # Render all scene objects
+    render_scene(renderer, camera)
 
     # Present the frame
     renderer.present()
