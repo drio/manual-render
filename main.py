@@ -46,10 +46,9 @@ renderer = sdl2.ext.Renderer(window)
 class Camera:
     """Simple camera class to group camera-related variables"""
 
-    def __init__(self, position=[-500, -300, 500], target=[0, 50, 0], focal_length=500):
-        print(f"camera position= {position}")
-        self.position = position
-        self.target = target
+    def __init__(self, position=None, target=None, focal_length=500):
+        self.position = position if position is not None else [-500, -300, 500]
+        self.target = target if target is not None else [0, 50, 0]
         self.focal_length = focal_length
 
     def update_orbit(self, angle, radius=300, height=200):
@@ -273,7 +272,6 @@ def create_projection_matrix(
 ):
     """Create a perspective projection matrix"""
     # Calculate field of view parameters
-    aspect_ratio = width / height
     fov_scale_x = focal_length / (width / 2)
     fov_scale_y = focal_length / (height / 2)
 
@@ -331,7 +329,6 @@ def project_3d_to_2d_via_matrix(point, camera, width=WIDTH, height=HEIGHT):
     if transformed_point[3] != 0:  # Check w coordinate
         screen_x = transformed_point[0] / transformed_point[3]
         screen_y = transformed_point[1] / transformed_point[3]
-        screen_z = transformed_point[2] / transformed_point[3]
 
         # Check if point is visible (in front of camera and w > 0)
         if transformed_point[3] > 0.1:  # Check w coordinate instead of z
@@ -625,7 +622,6 @@ orbit_speed = 0.5  # Rotation speed
 # Choose which projection method to use:
 project_3d_to_2d = project_3d_to_2d_direct  # Use direct calculation
 # project_3d_to_2d = project_3d_to_2d_via_matrix   # Use matrix method
-print(f"Using projection method: {project_3d_to_2d.__name__}")
 
 # Main loop
 running = True

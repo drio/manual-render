@@ -18,3 +18,4 @@ manual-render
 compile_commands.json
 CLAUDE.local.md
 __pycache__
+.claude
