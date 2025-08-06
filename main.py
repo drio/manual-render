@@ -7,7 +7,7 @@ import numpy as np
 import sdl2
 import sdl2.ext
 
-from vector_math import normalize, cross, dot
+from vector_math import cross, dot, normalize
 
 # Initialize SDL2
 sdl2.ext.init()
@@ -48,13 +48,13 @@ class Camera:
 cube_geometry = {
     "vertices": [
         [-1, -1, -1],  # 0: back bottom left
-        [1, -1, -1],   # 1: back bottom right
-        [1, 1, -1],    # 2: back top right
-        [-1, 1, -1],   # 3: back top left
-        [-1, -1, 1],   # 4: front bottom left
-        [1, -1, 1],    # 5: front bottom right
-        [1, 1, 1],     # 6: front top right
-        [-1, 1, 1],    # 7: front top left
+        [1, -1, -1],  # 1: back bottom right
+        [1, 1, -1],  # 2: back top right
+        [-1, 1, -1],  # 3: back top left
+        [-1, -1, 1],  # 4: front bottom left
+        [1, -1, 1],  # 5: front bottom right
+        [1, 1, 1],  # 6: front top right
+        [-1, 1, 1],  # 7: front top left
     ],
     "edges": [
         (0, 1),
@@ -129,7 +129,6 @@ scene_objects = [
         "name": "coordinate_axes",
     },
 ]
-
 
 
 def create_view_matrix(camera_pos, target_pos):
@@ -257,6 +256,56 @@ def draw_circle_filled(renderer, x, y, radius):
                 renderer.draw_point((x + dx, y + dy))
 
 
+def rasterize_triangle(renderer, p1, p2, p3, color):
+    """Rasterize a triangle by filling all pixels inside it
+
+    Args:
+        renderer: SDL2 renderer
+        p1, p2, p3: 2D points as tuples (x, y)
+        color: RGB color tuple (r, g, b)
+    """
+    # Set the color
+    renderer.color = sdl2.ext.Color(color[0], color[1], color[2], 255)
+
+    # Find bounding box of the triangle
+    min_x = max(0, int(min(p1[0], p2[0], p3[0])))
+    max_x = min(WIDTH - 1, int(max(p1[0], p2[0], p3[0])))
+    min_y = max(0, int(min(p1[1], p2[1], p3[1])))
+    max_y = min(HEIGHT - 1, int(max(p1[1], p2[1], p3[1])))
+
+    # For each pixel in the bounding box, check if it's inside the triangle
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if point_in_triangle(x, y, p1, p2, p3):
+                renderer.draw_point((x, y))
+
+
+def point_in_triangle(px, py, p1, p2, p3):
+    """Check if point (px, py) is inside triangle defined by p1, p2, p3
+
+    Uses barycentric coordinates method
+    """
+    # Get triangle vertices
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+
+    # Calculate barycentric coordinates
+    denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+    # Check for degenerate triangle
+    # A degenerate triangle is what happens when a triangle "collapses" and loses its triangular shape,
+    # becoming either a straight line or a single point instead of forming a proper two-dimensional triangle.
+    if abs(denom) < 1e-10:
+        return False
+
+    a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / denom
+    b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / denom
+    c = 1 - a - b
+
+    # Point is inside if all barycentric coordinates are >= 0
+    return a >= 0 and b >= 0 and c >= 0
+
+
 def apply_color_tint(base_color, tint, intensity=0.3):
     """Apply a color tint to a base color"""
     r = int(base_color[0] * (1 - intensity) + tint[0] * intensity)
@@ -321,16 +370,36 @@ def draw_cube(renderer, obj_data, camera):
         point_2d = project_3d_to_2d(vertex, camera)
         projected_vertices.append(point_2d)
 
-    # Draw edges
-    renderer.color = sdl2.ext.Color(200, 200, 200, 255)  # Light gray for edges
-    for edge in cube_geometry["edges"]:
-        start_vertex = projected_vertices[edge[0]]
-        end_vertex = projected_vertices[edge[1]]
+    # Draw triangles (filled faces)
+    if RENDER_TRIANGLES:
+        for triangle in cube_geometry["triangles"]:
+            # Get the 3D vertices for this triangle
+            v1 = translated_vertices[triangle["vertices"][0]]
+            v2 = translated_vertices[triangle["vertices"][1]]
+            v3 = translated_vertices[triangle["vertices"][2]]
 
-        if start_vertex and end_vertex:
-            renderer.draw_line(
-                (start_vertex[0], start_vertex[1], end_vertex[0], end_vertex[1])
-            )
+            # Project to 2D
+            p1 = project_3d_to_2d(v1, camera)
+            p2 = project_3d_to_2d(v2, camera)
+            p3 = project_3d_to_2d(v3, camera)
+
+            # Only render if all vertices are visible
+            if p1 and p2 and p3:
+                # Apply object color tint to triangle color
+                tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
+                rasterize_triangle(renderer, p1, p2, p3, tinted_color)
+
+    # Draw wireframe edges
+    if RENDER_WIREFRAME:
+        renderer.color = sdl2.ext.Color(200, 200, 200, 255)  # Light gray for edges
+        for edge in cube_geometry["edges"]:
+            start_vertex = projected_vertices[edge[0]]
+            end_vertex = projected_vertices[edge[1]]
+
+            if start_vertex and end_vertex:
+                renderer.draw_line(
+                    (start_vertex[0], start_vertex[1], end_vertex[0], end_vertex[1])
+                )
 
 
 def render_scene(renderer, camera):
@@ -382,6 +451,10 @@ def draw_axes(renderer, camera):
             renderer.draw_line((origin_2d[0], origin_2d[1], z_axis_2d[0], z_axis_2d[1]))
             draw_circle_filled(renderer, z_axis_2d[0], z_axis_2d[1], 3)
 
+
+# Rendering options
+RENDER_WIREFRAME = True  # Set to False to disable wireframe edges
+RENDER_TRIANGLES = True  # Set to False to disable filled triangles
 
 # Colors
 BLACK = sdl2.ext.Color(0, 0, 0, 255)
