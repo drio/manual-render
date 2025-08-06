@@ -166,7 +166,6 @@ def create_ground_plane_triangles(size=400, spacing=50):
     triangles = []
 
     # Create a grid of squares, each split into 2 triangles
-    grid_count = 0
     for x in range(-size, size, spacing):
         for z in range(-size, size, spacing):
             # Define corners of current grid square
