@@ -12,6 +12,24 @@ from vector_math import cross, dot, normalize
 # Initialize SDL2
 sdl2.ext.init()
 
+# Colors for cube triangles
+RED_COLOR = (255, 100, 100)    # Red
+BLUE_COLOR = (100, 100, 255)   # Blue
+YELLOW_COLOR = (255, 255, 100) # Yellow
+GREEN_COLOR = (100, 255, 100)  # Green
+MAGENTA_COLOR = (255, 100, 255) # Magenta
+CYAN_COLOR = (100, 255, 255)   # Cyan
+
+# Other colors
+DARK_GRAY_COLOR = (60, 60, 60)     # Ground plane
+WHITE_COLOR = (255, 255, 255)      # White cube tint
+LIGHT_RED_COLOR = (255, 200, 200)  # Large cube tint  
+LIGHT_GREEN_COLOR = (200, 255, 200) # Small cube tint
+PURE_RED_COLOR = (255, 0, 0)       # X axis
+PURE_GREEN_COLOR = (0, 255, 0)     # Y axis
+PURE_BLUE_COLOR = (0, 0, 255)      # Z axis
+
+
 # Create window and renderer
 WIDTH, HEIGHT = 800, 600
 X = 3025
@@ -71,29 +89,24 @@ cube_geometry = {
         (3, 7),  # connecting edges
     ],
     "triangles": [
-        # Front face (z = 1): vertices [4, 5, 6, 7]
-        {"vertices": [4, 5, 6], "color": (255, 100, 100), "name": "front_1"},
-        {"vertices": [4, 6, 7], "color": (255, 100, 100), "name": "front_2"},
-        
+        # Front face (z = 1): vertices [4, 5, 6, 7] - working triangle arrangement
+        {"vertices": [4, 5, 7], "color": RED_COLOR, "name": "front_1"},
+        {"vertices": [5, 6, 7], "color": RED_COLOR, "name": "front_2"},
         # Back face (z = -1): vertices [0, 1, 2, 3]
-        {"vertices": [0, 2, 1], "color": (100, 100, 255), "name": "back_1"},
-        {"vertices": [0, 3, 2], "color": (100, 100, 255), "name": "back_2"},
-        
+        {"vertices": [0, 2, 1], "color": BLUE_COLOR, "name": "back_1"},
+        {"vertices": [0, 3, 2], "color": BLUE_COLOR, "name": "back_2"},
         # Top face (y = 1): vertices [2, 3, 7, 6]
-        {"vertices": [2, 6, 7], "color": (255, 255, 100), "name": "top_1"},
-        {"vertices": [2, 7, 3], "color": (255, 255, 100), "name": "top_2"},
-        
+        {"vertices": [2, 6, 7], "color": YELLOW_COLOR, "name": "top_1"},
+        {"vertices": [2, 7, 3], "color": YELLOW_COLOR, "name": "top_2"},
         # Bottom face (y = -1): vertices [0, 1, 5, 4]
-        {"vertices": [0, 4, 5], "color": (100, 255, 100), "name": "bottom_1"},
-        {"vertices": [0, 5, 1], "color": (100, 255, 100), "name": "bottom_2"},
-        
+        {"vertices": [0, 4, 5], "color": GREEN_COLOR, "name": "bottom_1"},
+        {"vertices": [0, 5, 1], "color": GREEN_COLOR, "name": "bottom_2"},
         # Left face (x = -1): vertices [0, 3, 7, 4]
-        {"vertices": [0, 3, 7], "color": (255, 100, 255), "name": "left_1"},
-        {"vertices": [0, 7, 4], "color": (255, 100, 255), "name": "left_2"},
-        
+        {"vertices": [0, 3, 7], "color": MAGENTA_COLOR, "name": "left_1"},
+        {"vertices": [0, 7, 4], "color": MAGENTA_COLOR, "name": "left_2"},
         # Right face (x = 1): vertices [1, 2, 6, 5]
-        {"vertices": [1, 5, 6], "color": (100, 255, 255), "name": "right_1"},
-        {"vertices": [1, 6, 2], "color": (100, 255, 255), "name": "right_2"},
+        {"vertices": [1, 5, 6], "color": CYAN_COLOR, "name": "right_1"},
+        {"vertices": [1, 6, 2], "color": CYAN_COLOR, "name": "right_2"},
     ],
 }
 
@@ -101,22 +114,22 @@ ground_plane_geometry = {
     # Base unit grid square from (-1,-1) to (1,1) on XZ plane
     "vertices": [
         [-1, 0, -1],  # 0: back left
-        [1, 0, -1],   # 1: back right  
-        [1, 0, 1],    # 2: front right
-        [-1, 0, 1],   # 3: front left
+        [1, 0, -1],  # 1: back right
+        [1, 0, 1],  # 2: front right
+        [-1, 0, 1],  # 3: front left
     ],
     "triangles": [
-        {"vertices": [0, 1, 2], "color": (60, 60, 60), "name": "grid_1"},
-        {"vertices": [0, 2, 3], "color": (60, 60, 60), "name": "grid_2"},
-    ]
+        {"vertices": [0, 1, 2], "color": DARK_GRAY_COLOR, "name": "grid_1"},
+        {"vertices": [0, 2, 3], "color": DARK_GRAY_COLOR, "name": "grid_2"},
+    ],
 }
 
 axes_geometry = {
     "length": 100,
     "colors": {
-        "x": (255, 0, 0),  # Red
-        "y": (0, 255, 0),  # Green
-        "z": (0, 0, 255),  # Blue
+        "x": PURE_RED_COLOR,    # Red
+        "y": PURE_GREEN_COLOR,  # Green
+        "z": PURE_BLUE_COLOR,   # Blue
     },
 }
 
@@ -128,71 +141,65 @@ def create_cube_vertices(scale=50):
 
 def create_ground_plane_triangles(size=400, spacing=50):
     """Create triangles for a grid-based ground plane
-    
+
     Args:
         size: Half-width of the plane (creates plane from -size to +size)
         spacing: Distance between grid lines
-    
+
     Returns:
         List of triangle dictionaries with world-space vertices
     """
     triangles = []
-    
+
     # Create a grid of squares, each split into 2 triangles
     for x in range(-size, size, spacing):
         for z in range(-size, size, spacing):
             # Define corners of current grid square
-            p1 = [x, 0, z]                    # bottom-left
-            p2 = [x + spacing, 0, z]          # bottom-right
+            p1 = [x, 0, z]  # bottom-left
+            p2 = [x + spacing, 0, z]  # bottom-right
             p3 = [x + spacing, 0, z + spacing]  # top-right
-            p4 = [x, 0, z + spacing]          # top-left
-            
+            p4 = [x, 0, z + spacing]  # top-left
+
             # Single color for all triangles
-            color = (60, 60, 60)  # Dark gray
-            
+            color = DARK_GRAY_COLOR
+
             # Split square into two triangles
-            triangles.append({
-                "vertices": [p1, p2, p3],
-                "color": color
-            })
-            triangles.append({
-                "vertices": [p1, p3, p4], 
-                "color": color
-            })
-    
+            triangles.append({"vertices": [p1, p2, p3], "color": color})
+            triangles.append({"vertices": [p1, p3, p4], "color": color})
+
     return triangles
 
 
 # Unified scene objects data structure
 scene_objects = [
     {
+        "type": "ground_plane",
+        "pos": [0, 0, 0],
+        "size": 400,
+        "spacing": 50,
+        "color": DARK_GRAY_COLOR,
+        "name": "ground",
+    },
+    {
         "type": "cube",
         "pos": [0, -50, 0],
         "scale": 50,
-        "color": (255, 255, 255),
+        "color": WHITE_COLOR,
         "name": "center_cube",
     },
     {
         "type": "cube",
         "pos": [250, -80, 100],
         "scale": 80,
-        "color": (255, 200, 200),
+        "color": LIGHT_RED_COLOR,
         "name": "large_cube",
     },
     {
         "type": "cube",
         "pos": [-250, -30, -100],
         "scale": 30,
-        "color": (200, 255, 200),
+        "color": LIGHT_GREEN_COLOR,
         "name": "small_cube",
-    },
-    {
-        "type": "ground_plane",
-        "pos": [0, 0, 0],
-        "size": 400,
-        "spacing": 50,
-        "color": (60, 60, 60),
-        "name": "ground",
     },
     {
         "type": "axes",
@@ -391,7 +398,7 @@ def apply_color_tint(base_color, tint, intensity=0.3):
 
 def draw_ground_plane(renderer, camera, size=400, spacing=50):
     """Draw ground plane with triangles and/or wireframe based on render flags"""
-    
+
     # Draw filled triangles
     if RENDER_TRIANGLES:
         triangles = create_ground_plane_triangles(size, spacing)
@@ -400,11 +407,11 @@ def draw_ground_plane(renderer, camera, size=400, spacing=50):
             p1 = project_3d_to_2d(triangle["vertices"][0], camera)
             p2 = project_3d_to_2d(triangle["vertices"][1], camera)
             p3 = project_3d_to_2d(triangle["vertices"][2], camera)
-            
+
             # Only render if all vertices are visible
             if p1 and p2 and p3:
                 rasterize_triangle(renderer, p1, p2, p3, triangle["color"])
-    
+
     # Draw wireframe grid
     if RENDER_WIREFRAME:
         renderer.color = sdl2.ext.Color(80, 80, 80, 255)  # Dark gray
@@ -583,7 +590,7 @@ while running:
     current_time = time.time() - start_time
     orbit_angle = current_time * orbit_speed
     # Update camera position to orbit around the scene
-    camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
+    # camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
     # Clear screen
     renderer.color = BLACK
