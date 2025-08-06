@@ -74,6 +74,9 @@ cube_geometry = {
         # Front face (z = 1): vertices [4, 5, 6, 7]
         {"vertices": [4, 5, 6], "color": (255, 100, 100), "name": "front_1"},
         {"vertices": [4, 6, 7], "color": (255, 100, 100), "name": "front_2"},
+        # Top face (y = 1): vertices [2, 3, 7, 6]
+        {"vertices": [2, 6, 7], "color": (255, 255, 100), "name": "top_1"},
+        {"vertices": [2, 7, 3], "color": (255, 255, 100), "name": "top_2"},
     ],
 }
 
