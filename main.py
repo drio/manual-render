@@ -40,28 +40,20 @@ class Camera:
         self.position[2] = radius * math.sin(angle)  # Z position
 
 
-def create_cube_vertices(scale=50):
-    """Create cube vertices with given scale"""
-    return (
-        np.array(
-            [
-                [-1, -1, -1],  # 0: back bottom left
-                [1, -1, -1],  # 1: back bottom right
-                [1, 1, -1],  # 2: back top right
-                [-1, 1, -1],  # 3: back top left
-                [-1, -1, 1],  # 4: front bottom left
-                [1, -1, 1],  # 5: front bottom right
-                [1, 1, 1],  # 6: front top right
-                [-1, 1, 1],  # 7: front top left
-            ]
-        )
-        * scale
-    )
-
-
 # Geometry definitions (shared by all instances of the same type)
 # Provides a template to create cube instances
+# values in tuples or lists reference the vertices
 cube_geometry = {
+    "vertices": [
+        [-1, -1, -1],  # 0: back bottom left
+        [1, -1, -1],   # 1: back bottom right
+        [1, 1, -1],    # 2: back top right
+        [-1, 1, -1],   # 3: back top left
+        [-1, -1, 1],   # 4: front bottom left
+        [1, -1, 1],    # 5: front bottom right
+        [1, 1, 1],     # 6: front top right
+        [-1, 1, 1],    # 7: front top left
+    ],
     "edges": [
         (0, 1),
         (1, 2),
@@ -91,6 +83,12 @@ axes_geometry = {
         "z": (0, 0, 255),  # Blue
     },
 }
+
+
+def create_cube_vertices(scale=50):
+    """Create cube vertices with given scale"""
+    return np.array(cube_geometry["vertices"]) * scale
+
 
 # Unified scene objects data structure
 scene_objects = [
