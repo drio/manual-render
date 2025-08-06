@@ -129,8 +129,8 @@ vertical_plane_geometry = {
     "vertices": [
         [-1, 0, 0],  # 0: bottom left
         [1, 0, 0],  # 1: bottom right
-        [1, -1, 0],  # 2: top right
-        [-1, -1, 0],  # 3: top left
+        [1, 1, 0],  # 2: top right
+        [-1, 1, 0],  # 3: top left
     ],
     "triangles": [
         {"vertices": [0, 1, 2], "color": RED_COLOR, "name": "plane_1"},
@@ -251,7 +251,7 @@ def create_view_matrix(camera_pos, target_pos):
     # Create the camera coordinate system (same as in project_3d_to_2d)
     forward = normalize(np.array(target_pos) - np.array(camera_pos))
     world_up = np.array([0, 1, 0])
-    right = normalize(np.cross(world_up, forward))
+    right = normalize(np.cross(forward, world_up))
     up = np.cross(forward, right)
 
     # The view matrix combines rotation and translation
@@ -346,7 +346,7 @@ def project_3d_to_2d_direct(point, camera, width=WIDTH, height=HEIGHT):
     # Create camera coordinate system
     forward = normalize(np.array(camera.target) - np.array(camera.position))
     world_up = np.array([0, 1, 0])
-    right = normalize(cross(world_up, forward))
+    right = normalize(cross(forward, world_up))
     up = cross(forward, right)
 
     # Transform point to camera space
@@ -615,11 +615,11 @@ BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
 # Camera positioned above ground, looking at cubes above ground
 # camera = Camera(position=[200, -300, 800], target=[0, 0, 0], focal_length=600)
-camera = Camera(position=[400, -200, 800], target=[0, 0, 0], focal_length=600)
+camera = Camera(position=[400, 200, 800], target=[0, 0, 0], focal_length=600)
 
 # Orbit parameters that make sense
 orbit_radius = 800  # Distance from center
-orbit_height = -200  # Y position ABOVE ground
+orbit_height = 200  # Y position ABOVE ground
 orbit_speed = 0.5  # Rotation speed
 
 
