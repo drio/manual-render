@@ -1,5 +1,13 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## 07: Triangle rasterization
+
+![](assets/tri-raster.gif)
+
+Adding triangle rasterization. I am already dropping frames!
+We need shaders asap.
+
+
 ## 06: Orbit Camera Movement
 
 I’ve refactored the camera a bit — it now orbits around the scene.
