@@ -74,10 +74,41 @@ cube_geometry = {
         # Front face (z = 1): vertices [4, 5, 6, 7]
         {"vertices": [4, 5, 6], "color": (255, 100, 100), "name": "front_1"},
         {"vertices": [4, 6, 7], "color": (255, 100, 100), "name": "front_2"},
+        
+        # Back face (z = -1): vertices [0, 1, 2, 3]
+        {"vertices": [0, 2, 1], "color": (100, 100, 255), "name": "back_1"},
+        {"vertices": [0, 3, 2], "color": (100, 100, 255), "name": "back_2"},
+        
         # Top face (y = 1): vertices [2, 3, 7, 6]
         {"vertices": [2, 6, 7], "color": (255, 255, 100), "name": "top_1"},
         {"vertices": [2, 7, 3], "color": (255, 255, 100), "name": "top_2"},
+        
+        # Bottom face (y = -1): vertices [0, 1, 5, 4]
+        {"vertices": [0, 4, 5], "color": (100, 255, 100), "name": "bottom_1"},
+        {"vertices": [0, 5, 1], "color": (100, 255, 100), "name": "bottom_2"},
+        
+        # Left face (x = -1): vertices [0, 3, 7, 4]
+        {"vertices": [0, 3, 7], "color": (255, 100, 255), "name": "left_1"},
+        {"vertices": [0, 7, 4], "color": (255, 100, 255), "name": "left_2"},
+        
+        # Right face (x = 1): vertices [1, 2, 6, 5]
+        {"vertices": [1, 5, 6], "color": (100, 255, 255), "name": "right_1"},
+        {"vertices": [1, 6, 2], "color": (100, 255, 255), "name": "right_2"},
     ],
+}
+
+ground_plane_geometry = {
+    # Base unit grid square from (-1,-1) to (1,1) on XZ plane
+    "vertices": [
+        [-1, 0, -1],  # 0: back left
+        [1, 0, -1],   # 1: back right  
+        [1, 0, 1],    # 2: front right
+        [-1, 0, 1],   # 3: front left
+    ],
+    "triangles": [
+        {"vertices": [0, 1, 2], "color": (60, 60, 60), "name": "grid_1"},
+        {"vertices": [0, 2, 3], "color": (60, 60, 60), "name": "grid_2"},
+    ]
 }
 
 axes_geometry = {
@@ -93,6 +124,43 @@ axes_geometry = {
 def create_cube_vertices(scale=50):
     """Create cube vertices with given scale"""
     return np.array(cube_geometry["vertices"]) * scale
+
+
+def create_ground_plane_triangles(size=400, spacing=50):
+    """Create triangles for a grid-based ground plane
+    
+    Args:
+        size: Half-width of the plane (creates plane from -size to +size)
+        spacing: Distance between grid lines
+    
+    Returns:
+        List of triangle dictionaries with world-space vertices
+    """
+    triangles = []
+    
+    # Create a grid of squares, each split into 2 triangles
+    for x in range(-size, size, spacing):
+        for z in range(-size, size, spacing):
+            # Define corners of current grid square
+            p1 = [x, 0, z]                    # bottom-left
+            p2 = [x + spacing, 0, z]          # bottom-right
+            p3 = [x + spacing, 0, z + spacing]  # top-right
+            p4 = [x, 0, z + spacing]          # top-left
+            
+            # Single color for all triangles
+            color = (60, 60, 60)  # Dark gray
+            
+            # Split square into two triangles
+            triangles.append({
+                "vertices": [p1, p2, p3],
+                "color": color
+            })
+            triangles.append({
+                "vertices": [p1, p3, p4], 
+                "color": color
+            })
+    
+    return triangles
 
 
 # Unified scene objects data structure
@@ -286,7 +354,11 @@ def rasterize_triangle(renderer, p1, p2, p3, color):
 def point_in_triangle(px, py, p1, p2, p3):
     """Check if point (px, py) is inside triangle defined by p1, p2, p3
 
-    Uses barycentric coordinates method
+    Given a triangle with vertices A, B, C and a point P, how do we know if P is inside the triangle?
+
+    Uses barycentric coordinates method:
+        Barycentric coordinates express any point P as a weighted combination of the triangle's vertices:
+        P = a×A + b×B + c×C where a + b + c = 1
     """
     # Get triangle vertices
     x1, y1 = p1
@@ -318,45 +390,61 @@ def apply_color_tint(base_color, tint, intensity=0.3):
 
 
 def draw_ground_plane(renderer, camera, size=400, spacing=50):
-    """Draw a grid ground plane"""
-    renderer.color = sdl2.ext.Color(80, 80, 80, 255)  # Dark gray
+    """Draw ground plane with triangles and/or wireframe based on render flags"""
+    
+    # Draw filled triangles
+    if RENDER_TRIANGLES:
+        triangles = create_ground_plane_triangles(size, spacing)
+        for triangle in triangles:
+            # Project triangle vertices to 2D
+            p1 = project_3d_to_2d(triangle["vertices"][0], camera)
+            p2 = project_3d_to_2d(triangle["vertices"][1], camera)
+            p3 = project_3d_to_2d(triangle["vertices"][2], camera)
+            
+            # Only render if all vertices are visible
+            if p1 and p2 and p3:
+                rasterize_triangle(renderer, p1, p2, p3, triangle["color"])
+    
+    # Draw wireframe grid
+    if RENDER_WIREFRAME:
+        renderer.color = sdl2.ext.Color(80, 80, 80, 255)  # Dark gray
 
-    # Create grid lines parallel to X axis
-    for z in range(-size, size + spacing, spacing):
-        start_point = np.array([-size, 0, z])
-        end_point = np.array([size, 0, z])
+        # Create grid lines parallel to X axis
+        for z in range(-size, size + spacing, spacing):
+            start_point = np.array([-size, 0, z])
+            end_point = np.array([size, 0, z])
 
-        start_2d = project_3d_to_2d(start_point, camera)
-        end_2d = project_3d_to_2d(end_point, camera)
+            start_2d = project_3d_to_2d(start_point, camera)
+            end_2d = project_3d_to_2d(end_point, camera)
 
+            if start_2d and end_2d:
+                renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
+
+        # Create grid lines parallel to Z axis
+        for x in range(-size, size + spacing, spacing):
+            start_point = np.array([x, 0, -size])
+            end_point = np.array([x, 0, size])
+
+            start_2d = project_3d_to_2d(start_point, camera)
+            end_2d = project_3d_to_2d(end_point, camera)
+
+            if start_2d and end_2d:
+                renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
+
+        # Draw center lines slightly brighter
+        renderer.color = sdl2.ext.Color(120, 120, 120, 255)  # Lighter gray
+
+        # Center line along X axis
+        start_2d = project_3d_to_2d(np.array([-size, 0, 0]), camera)
+        end_2d = project_3d_to_2d(np.array([size, 0, 0]), camera)
         if start_2d and end_2d:
             renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
 
-    # Create grid lines parallel to Z axis
-    for x in range(-size, size + spacing, spacing):
-        start_point = np.array([x, 0, -size])
-        end_point = np.array([x, 0, size])
-
-        start_2d = project_3d_to_2d(start_point, camera)
-        end_2d = project_3d_to_2d(end_point, camera)
-
+        # Center line along Z axis
+        start_2d = project_3d_to_2d(np.array([0, 0, -size]), camera)
+        end_2d = project_3d_to_2d(np.array([0, 0, size]), camera)
         if start_2d and end_2d:
             renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
-
-    # Draw center lines slightly brighter
-    renderer.color = sdl2.ext.Color(120, 120, 120, 255)  # Lighter gray
-
-    # Center line along X axis
-    start_2d = project_3d_to_2d(np.array([-size, 0, 0]), camera)
-    end_2d = project_3d_to_2d(np.array([size, 0, 0]), camera)
-    if start_2d and end_2d:
-        renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
-
-    # Center line along Z axis
-    start_2d = project_3d_to_2d(np.array([0, 0, -size]), camera)
-    end_2d = project_3d_to_2d(np.array([0, 0, size]), camera)
-    if start_2d and end_2d:
-        renderer.draw_line((start_2d[0], start_2d[1], end_2d[0], end_2d[1]))
 
 
 def draw_cube(renderer, obj_data, camera):
