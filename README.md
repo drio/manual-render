@@ -1,6 +1,7 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
 ## 06: Orbit Camera Movement
+
 I’ve refactored the camera a bit — it now orbits around the scene.
 
 ![](assets/stage-05.gif)
