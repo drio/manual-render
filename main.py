@@ -75,7 +75,12 @@ cube_geometry = {
         (1, 5),
         (2, 6),
         (3, 7),  # connecting edges
-    ]
+    ],
+    "triangles": [
+        # Front face (z = 1): vertices [4, 5, 6, 7]
+        {"vertices": [4, 5, 6], "color": (255, 100, 100), "name": "front_1"},
+        {"vertices": [4, 6, 7], "color": (255, 100, 100), "name": "front_2"},
+    ],
 }
 
 axes_geometry = {
