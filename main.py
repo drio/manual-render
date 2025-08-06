@@ -7,6 +7,8 @@ import numpy as np
 import sdl2
 import sdl2.ext
 
+from vector_math import normalize, cross, dot
+
 # Initialize SDL2
 sdl2.ext.init()
 
@@ -128,24 +130,6 @@ scene_objects = [
     },
 ]
 
-
-def normalize(vector):
-    """Normalize a vector to unit length"""
-    v = np.array(vector)
-    length = np.linalg.norm(v)
-    if length == 0:
-        return v
-    return v / length
-
-
-def cross(a, b):
-    """Calculate cross product of two 3D vectors"""
-    return np.cross(a, b)
-
-
-def dot(a, b):
-    """Calculate dot product of two vectors"""
-    return np.dot(a, b)
 
 
 def create_view_matrix(camera_pos, target_pos):
