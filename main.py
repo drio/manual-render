@@ -13,21 +13,21 @@ from vector_math import cross, dot, normalize
 sdl2.ext.init()
 
 # Colors for cube triangles
-RED_COLOR = (255, 100, 100)    # Red
-BLUE_COLOR = (100, 100, 255)   # Blue
-YELLOW_COLOR = (255, 255, 100) # Yellow
+RED_COLOR = (255, 100, 100)  # Red
+BLUE_COLOR = (100, 100, 255)  # Blue
+YELLOW_COLOR = (255, 255, 100)  # Yellow
 GREEN_COLOR = (100, 255, 100)  # Green
-MAGENTA_COLOR = (255, 100, 255) # Magenta
-CYAN_COLOR = (100, 255, 255)   # Cyan
+MAGENTA_COLOR = (255, 100, 255)  # Magenta
+CYAN_COLOR = (100, 255, 255)  # Cyan
 
 # Other colors
-DARK_GRAY_COLOR = (60, 60, 60)     # Ground plane
-WHITE_COLOR = (255, 255, 255)      # White cube tint
-LIGHT_RED_COLOR = (255, 200, 200)  # Large cube tint  
-LIGHT_GREEN_COLOR = (200, 255, 200) # Small cube tint
-PURE_RED_COLOR = (255, 0, 0)       # X axis
-PURE_GREEN_COLOR = (0, 255, 0)     # Y axis
-PURE_BLUE_COLOR = (0, 0, 255)      # Z axis
+DARK_GRAY_COLOR = (60, 60, 60)  # Ground plane
+WHITE_COLOR = (255, 255, 255)  # White cube tint
+LIGHT_RED_COLOR = (255, 200, 200)  # Large cube tint
+LIGHT_GREEN_COLOR = (200, 255, 200)  # Small cube tint
+PURE_RED_COLOR = (255, 0, 0)  # X axis
+PURE_GREEN_COLOR = (0, 255, 0)  # Y axis
+PURE_BLUE_COLOR = (0, 0, 255)  # Z axis
 
 
 # Create window and renderer
@@ -124,12 +124,26 @@ ground_plane_geometry = {
     ],
 }
 
+vertical_plane_geometry = {
+    # Simple vertical plane facing positive Z direction (toward camera when camera is at negative Z)
+    "vertices": [
+        [-1, 0, 0],  # 0: bottom left
+        [1, 0, 0],  # 1: bottom right
+        [1, -1, 0],  # 2: top right
+        [-1, -1, 0],  # 3: top left
+    ],
+    "triangles": [
+        {"vertices": [0, 1, 2], "color": RED_COLOR, "name": "plane_1"},
+        {"vertices": [0, 2, 3], "color": GREEN_COLOR, "name": "plane_2"},
+    ],
+}
+
 axes_geometry = {
-    "length": 100,
+    "length": 200,
     "colors": {
-        "x": PURE_RED_COLOR,    # Red
-        "y": PURE_GREEN_COLOR,  # Green
-        "z": PURE_BLUE_COLOR,   # Blue
+        "x": PURE_RED_COLOR,  # Red (+x RIGHT)
+        "y": PURE_GREEN_COLOR,  # Green (-y DOWN)
+        "z": PURE_BLUE_COLOR,  # Blue (+z toward camera when facing origin)
     },
 }
 
@@ -152,6 +166,7 @@ def create_ground_plane_triangles(size=400, spacing=50):
     triangles = []
 
     # Create a grid of squares, each split into 2 triangles
+    grid_count = 0
     for x in range(-size, size, spacing):
         for z in range(-size, size, spacing):
             # Define corners of current grid square
@@ -160,12 +175,41 @@ def create_ground_plane_triangles(size=400, spacing=50):
             p3 = [x + spacing, 0, z + spacing]  # top-right
             p4 = [x, 0, z + spacing]  # top-left
 
-            # Single color for all triangles
-            color = DARK_GRAY_COLOR
+            # Alternate between the two triangle colors from geometry
+            triangle1_color = ground_plane_geometry["triangles"][0][
+                "color"
+            ]  # BLUE_COLOR
+            triangle2_color = ground_plane_geometry["triangles"][1][
+                "color"
+            ]  # YELLOW_COLOR
 
-            # Split square into two triangles
-            triangles.append({"vertices": [p1, p2, p3], "color": color})
-            triangles.append({"vertices": [p1, p3, p4], "color": color})
+            # Split square into two triangles using geometry colors
+            triangles.append({"vertices": [p1, p2, p3], "color": triangle1_color})
+            triangles.append({"vertices": [p1, p3, p4], "color": triangle2_color})
+
+    return triangles
+
+
+def create_vertical_plane_triangles(size=100):
+    """Create triangles for a vertical plane
+
+    Args:
+        size: Half-width/height of the plane
+
+    Returns:
+        List of triangle dictionaries with world-space vertices
+    """
+    # Scale the base geometry
+    triangles = []
+    for triangle in vertical_plane_geometry["triangles"]:
+        # Scale vertices by size
+        scaled_vertices = []
+        for vertex_idx in triangle["vertices"]:
+            vertex = vertical_plane_geometry["vertices"][vertex_idx]
+            scaled_vertex = [vertex[0] * size, vertex[1] * size, vertex[2] * size]
+            scaled_vertices.append(scaled_vertex)
+
+        triangles.append({"vertices": scaled_vertices, "color": triangle["color"]})
 
     return triangles
 
@@ -180,26 +224,19 @@ scene_objects = [
         "color": DARK_GRAY_COLOR,
         "name": "ground",
     },
+    # {
+    #     "type": "cube",
+    #     "pos": [0, -50, 0],
+    #     "scale": 50,
+    #     "color": WHITE_COLOR,
+    #     "name": "center_cube",
+    # },
     {
-        "type": "cube",
-        "pos": [0, -50, 0],
-        "scale": 50,
-        "color": WHITE_COLOR,
-        "name": "center_cube",
-    },
-    {
-        "type": "cube",
-        "pos": [250, -80, 100],
-        "scale": 80,
-        "color": LIGHT_RED_COLOR,
-        "name": "large_cube",
-    },
-    {
-        "type": "cube",
-        "pos": [-250, -30, -100],
-        "scale": 30,
-        "color": LIGHT_GREEN_COLOR,
-        "name": "small_cube",
+        "type": "vertical_plane",
+        "pos": [0, 0, 0],
+        "size": 100,
+        "color": RED_COLOR,
+        "name": "test_plane",
     },
     {
         "type": "axes",
@@ -509,6 +546,25 @@ def render_scene(renderer, camera):
             draw_axes(renderer, camera)
         elif obj["type"] == "cube":
             draw_cube(renderer, obj, camera)
+        elif obj["type"] == "vertical_plane":
+            draw_vertical_plane(renderer, obj, camera)
+
+
+def draw_vertical_plane(renderer, obj_data, camera):
+    """Draw a vertical plane"""
+    if RENDER_TRIANGLES:
+        triangles = create_vertical_plane_triangles(obj_data["size"])
+        for triangle in triangles:
+            # Project triangle vertices to 2D
+            p1 = project_3d_to_2d(triangle["vertices"][0], camera)
+            p2 = project_3d_to_2d(triangle["vertices"][1], camera)
+            p3 = project_3d_to_2d(triangle["vertices"][2], camera)
+
+            # Only render if all vertices are visible
+            if p1 and p2 and p3:
+                # Apply object color tint to triangle color
+                tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
+                rasterize_triangle(renderer, p1, p2, p3, tinted_color)
 
 
 def draw_axes(renderer, camera):
@@ -590,7 +646,7 @@ while running:
     current_time = time.time() - start_time
     orbit_angle = current_time * orbit_speed
     # Update camera position to orbit around the scene
-    # camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
+    camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
     # Clear screen
     renderer.color = BLACK
