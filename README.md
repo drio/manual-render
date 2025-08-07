@@ -7,6 +7,78 @@ This is a repo to learn the math behind rendering 2D/3D scenes.
 Adding triangle rasterization. I am already dropping frames!
 We need shaders asap.
 
+I did also quite a bit of refactoring. Now we have geometry hashes
+that describe how to create the different objects in the scene. Then
+we have a scene object that defines the actual instances of those objects
+in our scene. Before that I had a mix and match between geometries and
+the scene. Now, all the objects are created from the geometry objects and
+then we scale them.
+
+Within the geometries, we define what triangles we have in that geometry.
+We define triangles as three vertex values. We also associate a color and 
+a name per each triangle.
+
+In the main loop, we call the render scene function that goes over the scene
+objects and calls the specific function that renders it. The render function
+first creates the vertices of all the triangles in the geometry. Per each
+vertex, we project the 3d point to 2d. Then we call the rasterice function.
+This function, creates a bounding box around the triangle and then goes over
+all the points in the triangle to determine if a point is within the triangle.
+If it is, it paints it. There is a dedicated function for that answers the
+question: Given a triangle with vertices A, B, C and a point P, how do we
+know if P is inside the triangle? It uses barycentric coordinates which you
+can use to determine if P is within the triangle. 
+
+The next thing is z buffering. The Problem: When multiple triangles occupy the
+same screen pixel, which one should be visible? Currently your pipeline renders
+in scene order, not depth order.
+
+### What's next?
+
+Core Missing Pieces
+
+1. Z-buffering - proper depth handling.
+2. Attribute interpolation - Currently I interpolate depth, but shaders interpolate many attributes
+(colors, texture coordinates, normals) across triangle surfaces.
+    - Normals are vectors that point perpendicular to a surface. If you have that info, then you
+      can use it to implement culling (don't render faces pointing away).
+    - UV coordinates: This are coordinates that we use to map textures into our triangles. The UV coordinates
+      go between (0-1) and (0-1). In our geometries, we define what UV coordinates you want to use in a pariticular
+      triangle for a particular object.
+3. Per-pixel operations - my pipeline does per-triangle operations; shaders work per-pixel.
+
+Shaders will replace:
+
+- Vertex Shader: Your project_3d_to_2d() and matrix transformations
+- Fragment Shader: Your rasterize_triangle() color decisions
+
+With z-buffering + attribute interpolation, the pipeline will become:
+
+This becomes "vertex shader-like":
+
+```py
+    for vertex in triangle_vertices:
+      screen_pos, depth, color = transform_vertex(vertex)
+```
+
+This becomes "fragment shader-like":
+```py
+    for pixel in triangle:
+      interpolated_color = interpolate_attributes(pixel_pos, vertex_colors)
+      if depth_test_passes(pixel_depth):
+          set_pixel_color(interpolated_color)
+```
+
+Z-buffering alone gets you proper 3D rendering. But adding attribute interpolation (colors, texture coordinates)
+across triangle surfaces makes the conceptual jump to shaders much clearer - because that's exactly what
+fragment shaders do: take interpolated attributes and compute final pixel colors.
+
+So: z-buffering for correctness, attribute interpolation for shader readiness.
+
+So probably next steps are:
+
+1. Implement z_buffer and confirm we can hide objects based on the camera position.
+2. Map a texture in my vertical plane
 
 ## 06: Orbit Camera Movement
 
