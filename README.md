@@ -10,10 +10,10 @@ z-buffering whatever is closets to the camera is what is going to be rendered.
 If two triangles (or parts of it) are overlapping each other, we should pick
 the one that is closest to the camera in the z axis. 
 
-![](assets/z-buffer-on.gif)
+![](assets/zbuffer-on.gif)
 (z-buffer on)
 
-![](assets/z-buffer-off.gif)
+![](assets/zbuffer-off.gif)
 (z-buffer off)
 
 ### What is next?
