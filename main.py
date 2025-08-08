@@ -9,18 +9,13 @@ import sdl2
 import sdl2.ext
 
 from fps import FPSCounter
-from projection import (
-    create_viewport_matrix,
-    project_3d_to_2d_direct,
-    project_3d_to_2d_via_matrix,
-)
+from projection import project_3d_to_2d_direct, project_3d_to_2d_via_matrix
 from rasterization import (
     clear_z_buffer,
     init_z_buffer,
     rasterize_triangle,
     rasterize_triangle_with_depth,
 )
-from vector_math import cross, dot, normalize
 
 # Initialize SDL2
 sdl2.ext.init()
@@ -305,12 +300,7 @@ def draw_ground_plane(renderer, camera, size=400, spacing=50):
                 p2, z2 = (p2_result[0], p2_result[1]), p2_result[2]
                 p3, z3 = (p3_result[0], p3_result[1]), p3_result[2]
 
-                if USE_Z_BUFFER:
-                    rasterize_triangle_with_depth(
-                        renderer, p1, p2, p3, z1, z2, z3, triangle["color"]
-                    )
-                else:
-                    rasterize_triangle(renderer, p1, p2, p3, triangle["color"])
+                render_triangle(renderer, p1, p2, p3, triangle["color"], z1, z2, z3)
 
     # Draw wireframe grid
     if RENDER_WIREFRAME:
@@ -385,15 +375,7 @@ def draw_cube(renderer, obj_data, camera):
             if p1 and p2 and p3:
                 # Apply object color tint to triangle color
                 tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
-                if USE_Z_BUFFER:
-                    # Extract depth values for z-buffered rendering
-                    z1, z2, z3 = p1[2], p2[2], p3[2]
-                    p1_2d, p2_2d, p3_2d = (p1[0], p1[1]), (p2[0], p2[1]), (p3[0], p3[1])
-                    rasterize_triangle_with_depth(
-                        renderer, p1_2d, p2_2d, p3_2d, z1, z2, z3, tinted_color
-                    )
-                else:
-                    rasterize_triangle(renderer, p1, p2, p3, tinted_color)
+                render_triangle(renderer, p1, p2, p3, tinted_color)
 
     # Draw wireframe edges
     if RENDER_WIREFRAME:
@@ -450,12 +432,7 @@ def draw_vertical_plane(renderer, obj_data, camera):
 
                 # Apply object color tint to triangle color
                 tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
-                if USE_Z_BUFFER:
-                    rasterize_triangle_with_depth(
-                        renderer, p1, p2, p3, z1, z2, z3, tinted_color
-                    )
-                else:
-                    rasterize_triangle(renderer, p1, p2, p3, tinted_color)
+                render_triangle(renderer, p1, p2, p3, tinted_color, z1, z2, z3)
 
 
 def draw_axes(renderer, camera):
@@ -524,6 +501,26 @@ def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
         return project_3d_to_2d_via_matrix(point, camera, width, height)
     else:
         return project_3d_to_2d_direct(point, camera, width, height)
+
+
+# Triangle rendering wrapper - handles z-buffer toggle
+def render_triangle(renderer, p1, p2, p3, color, z1=None, z2=None, z3=None):
+    """Unified triangle rendering that automatically chooses z-buffered or regular rendering"""
+    if USE_Z_BUFFER and z1 is not None and z2 is not None and z3 is not None:
+        # Extract 2D coordinates if we have 3D points
+        if len(p1) == 3:
+            p1_2d, p2_2d, p3_2d = (p1[0], p1[1]), (p2[0], p2[1]), (p3[0], p3[1])
+            z1, z2, z3 = p1[2], p2[2], p3[2]
+        else:
+            p1_2d, p2_2d, p3_2d = p1, p2, p3
+        rasterize_triangle_with_depth(renderer, p1_2d, p2_2d, p3_2d, z1, z2, z3, color)
+    else:
+        # Regular rasterization (no depth testing)
+        if len(p1) == 3:
+            p1_2d, p2_2d, p3_2d = (p1[0], p1[1]), (p2[0], p2[1]), (p3[0], p3[1])
+        else:
+            p1_2d, p2_2d, p3_2d = p1, p2, p3
+        rasterize_triangle(renderer, p1_2d, p2_2d, p3_2d, color)
 
 
 # Main loop
