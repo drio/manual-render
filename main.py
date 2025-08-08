@@ -249,7 +249,14 @@ scene_objects = [
         "pos": [0, 0, 0],
         "size": 100,
         "color": RED_COLOR,
-        "name": "test_plane",
+        "name": "front_plane",
+    },
+    {
+        "type": "vertical_plane",
+        "pos": [0, 0, -150],  # Behind the first plane
+        "size": 80,
+        "color": BLUE_COLOR,
+        "name": "back_plane",
     },
     {
         "type": "axes",
@@ -404,10 +411,20 @@ def draw_vertical_plane(renderer, obj_data, camera):
     if RENDER_TRIANGLES:
         triangles = create_vertical_plane_triangles(obj_data["size"])
         for triangle in triangles:
+            # Translate vertices to plane position
+            translated_vertices = []
+            for vertex in triangle["vertices"]:
+                translated_vertex = [
+                    vertex[0] + obj_data["pos"][0],
+                    vertex[1] + obj_data["pos"][1], 
+                    vertex[2] + obj_data["pos"][2]
+                ]
+                translated_vertices.append(translated_vertex)
+            
             # Project triangle vertices to 2D with depth
-            p1_result = project_3d_to_2d(triangle["vertices"][0], camera)
-            p2_result = project_3d_to_2d(triangle["vertices"][1], camera)
-            p3_result = project_3d_to_2d(triangle["vertices"][2], camera)
+            p1_result = project_3d_to_2d(translated_vertices[0], camera)
+            p2_result = project_3d_to_2d(translated_vertices[1], camera)
+            p3_result = project_3d_to_2d(translated_vertices[2], camera)
 
             # Only render if all vertices are visible
             if p1_result and p2_result and p3_result:
