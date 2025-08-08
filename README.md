@@ -5,6 +5,40 @@ This is a repo to learn the math behind rendering 2D/3D scenes.
 My FPS is 1 or 2 with rasterization enabled. Expected but at least we can measure it now.
 :)
 
+Can you guess which gif shows z-buffering and which one doesn't? Basically with
+z-buffering whatever is closets to the camera is what is going to be rendered.
+If two triangles (or parts of it) are overlapping each other, we should pick
+the one that is closest to the camera in the z axis. 
+
+![](assets/z-buffer-on.gif)
+(z-buffer on)
+
+![](assets/z-buffer-off.gif)
+(z-buffer off)
+
+### What is next?
+
+I want to eventually want to move to shaders which will be the final step in
+the journey, but for that I need a couple of other things to make a successfull
+transition to shaders.
+
+Things I have:
+
+  1. ✅ Geometry - Vertices and triangles
+  2. ✅ Transformations - World → View → Projection → Screen
+  3. ✅ Rasterization - Fill triangles pixel by pixel
+  4. ✅ Depth Testing - Z-buffer for occlusion
+
+What I need before moving to shaders:
+  5. - Surface Normals - Know which way surfaces face 
+    This will let us implement backface culling.
+  6. - Backface Culling - Skip invisible triangles
+
+When I have 5 and 6, I can then move to shaders which will implement most of the points there but 
+using the GPU (parallel processing) instead of the CPU.
+
+### Explaination of the z-buffering technique:
+
 Z-Buffering: The Core Concept
 
 The Problem: When multiple objects occupy the same screen pixel, which color should be displayed?

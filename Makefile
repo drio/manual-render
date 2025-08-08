@@ -19,6 +19,9 @@ lsp:
 float:
 	make clean $(TOOL); sleep 1; float-launch ./$(TOOL)
 
+run: 
+	uv run python ./main.py
+
 watch:
 	uv run watchfiles ./main.py
 
