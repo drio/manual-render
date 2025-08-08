@@ -9,7 +9,11 @@ import sdl2
 import sdl2.ext
 
 from fps import FPSCounter
-from projection import create_viewport_matrix, project_3d_to_2d_via_matrix, project_3d_to_2d_direct
+from projection import (
+    create_viewport_matrix,
+    project_3d_to_2d_direct,
+    project_3d_to_2d_via_matrix,
+)
 from rasterization import (
     clear_z_buffer,
     init_z_buffer,
@@ -301,9 +305,12 @@ def draw_ground_plane(renderer, camera, size=400, spacing=50):
                 p2, z2 = (p2_result[0], p2_result[1]), p2_result[2]
                 p3, z3 = (p3_result[0], p3_result[1]), p3_result[2]
 
-                rasterize_triangle_with_depth(
-                    renderer, p1, p2, p3, z1, z2, z3, triangle["color"]
-                )
+                if USE_Z_BUFFER:
+                    rasterize_triangle_with_depth(
+                        renderer, p1, p2, p3, z1, z2, z3, triangle["color"]
+                    )
+                else:
+                    rasterize_triangle(renderer, p1, p2, p3, triangle["color"])
 
     # Draw wireframe grid
     if RENDER_WIREFRAME:
@@ -378,7 +385,15 @@ def draw_cube(renderer, obj_data, camera):
             if p1 and p2 and p3:
                 # Apply object color tint to triangle color
                 tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
-                rasterize_triangle(renderer, p1, p2, p3, tinted_color)
+                if USE_Z_BUFFER:
+                    # Extract depth values for z-buffered rendering
+                    z1, z2, z3 = p1[2], p2[2], p3[2]
+                    p1_2d, p2_2d, p3_2d = (p1[0], p1[1]), (p2[0], p2[1]), (p3[0], p3[1])
+                    rasterize_triangle_with_depth(
+                        renderer, p1_2d, p2_2d, p3_2d, z1, z2, z3, tinted_color
+                    )
+                else:
+                    rasterize_triangle(renderer, p1, p2, p3, tinted_color)
 
     # Draw wireframe edges
     if RENDER_WIREFRAME:
@@ -416,11 +431,11 @@ def draw_vertical_plane(renderer, obj_data, camera):
             for vertex in triangle["vertices"]:
                 translated_vertex = [
                     vertex[0] + obj_data["pos"][0],
-                    vertex[1] + obj_data["pos"][1], 
-                    vertex[2] + obj_data["pos"][2]
+                    vertex[1] + obj_data["pos"][1],
+                    vertex[2] + obj_data["pos"][2],
                 ]
                 translated_vertices.append(translated_vertex)
-            
+
             # Project triangle vertices to 2D with depth
             p1_result = project_3d_to_2d(translated_vertices[0], camera)
             p2_result = project_3d_to_2d(translated_vertices[1], camera)
@@ -435,9 +450,12 @@ def draw_vertical_plane(renderer, obj_data, camera):
 
                 # Apply object color tint to triangle color
                 tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
-                rasterize_triangle_with_depth(
-                    renderer, p1, p2, p3, z1, z2, z3, tinted_color
-                )
+                if USE_Z_BUFFER:
+                    rasterize_triangle_with_depth(
+                        renderer, p1, p2, p3, z1, z2, z3, tinted_color
+                    )
+                else:
+                    rasterize_triangle(renderer, p1, p2, p3, tinted_color)
 
 
 def draw_axes(renderer, camera):
@@ -482,6 +500,7 @@ def draw_axes(renderer, camera):
 # Rendering options
 RENDER_WIREFRAME = True  # Set to False to disable wireframe edges
 RENDER_TRIANGLES = True  # Set to False to disable filled triangles
+USE_Z_BUFFER = True  # True for z-buffered rendering, False for simple overlay
 
 # Projection method selection
 USE_MATRIX_PROJECTION = True  # True for matrix method, False for direct method
@@ -505,6 +524,7 @@ def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
         return project_3d_to_2d_via_matrix(point, camera, width, height)
     else:
         return project_3d_to_2d_direct(point, camera, width, height)
+
 
 # Main loop
 running = True
@@ -531,8 +551,9 @@ while running:
     # Update camera position to orbit around the scene
     camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
-    # Clear screen and z-buffer
-    clear_z_buffer()
+    # Clear screen and z-buffer (if using z-buffer)
+    if USE_Z_BUFFER:
+        clear_z_buffer()
     renderer.color = BLACK
     renderer.clear()
 
