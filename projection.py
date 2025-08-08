@@ -88,9 +88,11 @@ def project_3d_to_2d_via_matrix(point, camera, width, height):
         screen_x = transformed_point[0] / transformed_point[3]
         screen_y = transformed_point[1] / transformed_point[3]
 
-        # Check if point is visible (in front of camera and w > 0)
-        if transformed_point[3] > 0.1:  # Check w coordinate instead of z
-            return (int(screen_x), int(screen_y))
+        # Check if point is visible (in front of camera)
+        # Note: W coordinate can be negative due to coordinate system differences
+        if abs(transformed_point[3]) > 0.1:  # Use absolute value
+            depth_z = abs(transformed_point[3])  # Convert to positive depth for compatibility
+            return (int(screen_x), int(screen_y), depth_z)
 
     return None
 

@@ -9,7 +9,7 @@ import sdl2
 import sdl2.ext
 
 from fps import FPSCounter
-from projection import create_viewport_matrix, project_3d_to_2d_via_matrix
+from projection import create_viewport_matrix, project_3d_to_2d_via_matrix, project_3d_to_2d_direct
 from rasterization import (
     clear_z_buffer,
     init_z_buffer,
@@ -466,6 +466,9 @@ def draw_axes(renderer, camera):
 RENDER_WIREFRAME = True  # Set to False to disable wireframe edges
 RENDER_TRIANGLES = True  # Set to False to disable filled triangles
 
+# Projection method selection
+USE_MATRIX_PROJECTION = True  # True for matrix method, False for direct method
+
 # Colors
 BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
@@ -479,14 +482,12 @@ orbit_height = 200  # Y position ABOVE ground
 orbit_speed = 0.5  # Rotation speed
 
 
-# Choose which projection method to use:
+# Projection method selection based on configuration
 def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
-    return project_3d_to_2d_via_matrix(point, camera, width, height)
-
-
-# Alternative: Use direct method
-# def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
-#     return project_3d_to_2d_direct(point, camera, width, height)
+    if USE_MATRIX_PROJECTION:
+        return project_3d_to_2d_via_matrix(point, camera, width, height)
+    else:
+        return project_3d_to_2d_direct(point, camera, width, height)
 
 # Main loop
 running = True
