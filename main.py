@@ -7,6 +7,7 @@ import numpy as np
 import sdl2
 import sdl2.ext
 
+from fps import FPSCounter
 from vector_math import cross, dot, normalize
 
 # Initialize SDL2
@@ -628,6 +629,8 @@ running = True
 event = sdl2.SDL_Event()
 start_time = time.time()  # Use real time for smooth animation
 
+fps_counter = FPSCounter()
+
 # X axis (Red): Left ← → Right (negative X is left, positive X is right)
 # Y axis (Green): Down ← → Up (negative Y is down, positive Y is up)
 # Z axis (Blue): Away ← → Toward Camera (negative Z is away/back, positive Z is toward/front)
@@ -636,6 +639,9 @@ while running:
     while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
         if event.type == sdl2.SDL_QUIT:
             running = False
+
+    if fps_counter.update():
+        print(f"3D Scene - FPS: {fps_counter.get_fps():.1f}")
 
     # Calculate current time and camera angle
     current_time = time.time() - start_time
