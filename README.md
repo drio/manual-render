@@ -1,5 +1,36 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## 08: FPS and z-buffering
+
+My FPS is 1 or 2 with rasterization enabled. Expected but at least we can measure it now.
+:)
+
+Z-Buffering: The Core Concept
+
+The Problem: When multiple objects occupy the same screen pixel, which color should be displayed?
+
+Currently the renderer paints triangles in the order you call them - last
+triangle wins, regardless of distance from camera.
+
+Solution: Per-Pixel Depth Memory
+
+Create a depth buffer - a 2D array matching your screen dimensions where each element stores "the depth of the
+closest surface seen so far at this pixel."
+
+The algorithm:
+For each triangle being rendered:
+
+  1. For each pixel inside the triangle:
+    - Calculate the depth (Z coordinate) at this pixel
+    - Compare to the depth already stored in z_buffer[pixel]
+    - If closer: Update z_buffer[pixel] and paint the pixel
+    - If farther: Skip this pixel (something closer already painted it)
+
+Instead of "last triangle wins," you get "closest triangle wins" at every single pixel.
+
+This happens automatically - you render triangles in any order, and the z-buffer ensures only the closest
+
+
 ## 07: Triangle rasterization
 
 ![](assets/tri-raster.gif)

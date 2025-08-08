@@ -1,5 +1,6 @@
 #!./.venv/bin/python
 import ctypes
+import logging
 import math
 import time
 
@@ -8,10 +9,20 @@ import sdl2
 import sdl2.ext
 
 from fps import FPSCounter
+from projection import create_viewport_matrix, project_3d_to_2d_direct
+from rasterization import (
+    clear_z_buffer,
+    init_z_buffer,
+    rasterize_triangle,
+    rasterize_triangle_with_depth,
+)
 from vector_math import cross, dot, normalize
 
 # Initialize SDL2
 sdl2.ext.init()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 # Colors for cube triangles
 RED_COLOR = (255, 100, 100)  # Red
@@ -33,6 +44,9 @@ PURE_BLUE_COLOR = (0, 0, 255)  # Z axis
 
 # Create window and renderer
 WIDTH, HEIGHT = 800, 600
+
+# Initialize z-buffer for depth testing
+init_z_buffer(WIDTH, HEIGHT)
 X = 3025
 Y = 48
 window = sdl2.ext.Window("3D Scene with Ground Plane - SDL2", size=(WIDTH, HEIGHT))
@@ -245,181 +259,12 @@ scene_objects = [
 ]
 
 
-def create_view_matrix(camera_pos, target_pos):
-    """Create a view matrix that transforms world coordinates to camera coordinates"""
-    # Create the camera coordinate system (same as in project_3d_to_2d)
-    forward = normalize(np.array(target_pos) - np.array(camera_pos))
-    world_up = np.array([0, 1, 0])
-    right = normalize(np.cross(forward, world_up))
-    up = np.cross(forward, right)
-
-    # The view matrix combines rotation and translation
-    # The rotation part uses our right/up/forward vectors as rows
-    # The translation part moves the world relative to camera position
-    view_matrix = np.array(
-        [
-            [right[0], right[1], right[2], -np.dot(right, camera_pos)],
-            [up[0], up[1], up[2], -np.dot(up, camera_pos)],
-            [forward[0], forward[1], forward[2], -np.dot(forward, camera_pos)],
-            [0, 0, 0, 1],
-        ]
-    )
-
-    return view_matrix
-
-
-def create_projection_matrix(
-    focal_length, width, height, near_plane=0.1, far_plane=1000.0
-):
-    """Create a perspective projection matrix"""
-    # Calculate field of view parameters
-    fov_scale_x = focal_length / (width / 2)
-    fov_scale_y = focal_length / (height / 2)
-
-    # The projection matrix
-    # This matrix transforms camera coordinates to clip coordinates
-    projection_matrix = np.array(
-        [
-            [fov_scale_x, 0, 0, 0],
-            [0, fov_scale_y, 0, 0],
-            [
-                0,
-                0,
-                -(far_plane + near_plane) / (far_plane - near_plane),
-                -2 * far_plane * near_plane / (far_plane - near_plane),
-            ],
-            [0, 0, -1, 0],
-        ]
-    )
-
-    return projection_matrix
-
-
-def create_viewport_matrix(width, height):
-    """Create a viewport matrix that converts to screen coordinates"""
-    viewport_matrix = np.array(
-        [
-            [width / 2, 0, 0, width / 2],
-            [0, -height / 2, 0, height / 2],  # Negative Y to flip coordinates
-            [0, 0, 1, 0],
-            [0, 0, 0, 1],
-        ]
-    )
-
-    return viewport_matrix
-
-
-def project_3d_to_2d_via_matrix(point, camera, width=WIDTH, height=HEIGHT):
-    """Project 3D point to 2D using matrix transformations"""
-    # Create the transformation matrices
-    view_matrix = create_view_matrix(camera.position, camera.target)
-    projection_matrix = create_projection_matrix(camera.focal_length, width, height)
-    viewport_matrix = create_viewport_matrix(width, height)
-
-    # Combine all matrices into a single transformation
-    # Matrix multiplication is applied right to left
-    mvp_matrix = viewport_matrix @ projection_matrix @ view_matrix
-
-    # Convert point to homogeneous coordinates
-    point_homogeneous = np.array([point[0], point[1], point[2], 1.0])
-
-    # Apply the combined transformation
-    transformed_point = mvp_matrix @ point_homogeneous
-
-    # Perform perspective division
-    if transformed_point[3] != 0:  # Check w coordinate
-        screen_x = transformed_point[0] / transformed_point[3]
-        screen_y = transformed_point[1] / transformed_point[3]
-
-        # Check if point is visible (in front of camera and w > 0)
-        if transformed_point[3] > 0.1:  # Check w coordinate instead of z
-            return (int(screen_x), int(screen_y))
-
-    return None
-
-
-def project_3d_to_2d_direct(point, camera, width=WIDTH, height=HEIGHT):
-    """Project 3D point to 2D, with camera looking at target_pos"""
-    # Create camera coordinate system
-    forward = normalize(np.array(camera.target) - np.array(camera.position))
-    world_up = np.array([0, 1, 0])
-    right = normalize(cross(forward, world_up))
-    up = cross(forward, right)
-
-    # Transform point to camera space
-    relative = np.array(point) - np.array(camera.position)
-    x_cam = dot(relative, right)
-    y_cam = dot(relative, up)
-    z_cam = dot(relative, forward)
-
-    # Perspective projection
-    if z_cam > 0.1:  # Small epsilon to avoid division by zero
-        x_2d = (camera.focal_length * x_cam) / z_cam
-        y_2d = (camera.focal_length * y_cam) / z_cam
-        return (int(x_2d + width / 2), int(y_2d + height / 2))
-    return None
-
-
 def draw_circle_filled(renderer, x, y, radius):
     """Draw a filled circle using SDL2"""
     for dx in range(-radius, radius + 1):
         for dy in range(-radius, radius + 1):
             if dx * dx + dy * dy <= radius * radius:
                 renderer.draw_point((x + dx, y + dy))
-
-
-def rasterize_triangle(renderer, p1, p2, p3, color):
-    """Rasterize a triangle by filling all pixels inside it
-
-    Args:
-        renderer: SDL2 renderer
-        p1, p2, p3: 2D points as tuples (x, y)
-        color: RGB color tuple (r, g, b)
-    """
-    # Set the color
-    renderer.color = sdl2.ext.Color(color[0], color[1], color[2], 255)
-
-    # Find bounding box of the triangle
-    min_x = max(0, int(min(p1[0], p2[0], p3[0])))
-    max_x = min(WIDTH - 1, int(max(p1[0], p2[0], p3[0])))
-    min_y = max(0, int(min(p1[1], p2[1], p3[1])))
-    max_y = min(HEIGHT - 1, int(max(p1[1], p2[1], p3[1])))
-
-    # For each pixel in the bounding box, check if it's inside the triangle
-    for y in range(min_y, max_y + 1):
-        for x in range(min_x, max_x + 1):
-            if point_in_triangle(x, y, p1, p2, p3):
-                renderer.draw_point((x, y))
-
-
-def point_in_triangle(px, py, p1, p2, p3):
-    """Check if point (px, py) is inside triangle defined by p1, p2, p3
-
-    Given a triangle with vertices A, B, C and a point P, how do we know if P is inside the triangle?
-
-    Uses barycentric coordinates method:
-        Barycentric coordinates express any point P as a weighted combination of the triangle's vertices:
-        P = a×A + b×B + c×C where a + b + c = 1
-    """
-    # Get triangle vertices
-    x1, y1 = p1
-    x2, y2 = p2
-    x3, y3 = p3
-
-    # Calculate barycentric coordinates
-    denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
-    # Check for degenerate triangle
-    # A degenerate triangle is what happens when a triangle "collapses" and loses its triangular shape,
-    # becoming either a straight line or a single point instead of forming a proper two-dimensional triangle.
-    if abs(denom) < 1e-10:
-        return False
-
-    a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / denom
-    b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / denom
-    c = 1 - a - b
-
-    # Point is inside if all barycentric coordinates are >= 0
-    return a >= 0 and b >= 0 and c >= 0
 
 
 def apply_color_tint(base_color, tint, intensity=0.3):
@@ -437,14 +282,21 @@ def draw_ground_plane(renderer, camera, size=400, spacing=50):
     if RENDER_TRIANGLES:
         triangles = create_ground_plane_triangles(size, spacing)
         for triangle in triangles:
-            # Project triangle vertices to 2D
-            p1 = project_3d_to_2d(triangle["vertices"][0], camera)
-            p2 = project_3d_to_2d(triangle["vertices"][1], camera)
-            p3 = project_3d_to_2d(triangle["vertices"][2], camera)
+            # Project triangle vertices to 2D with depth
+            p1_result = project_3d_to_2d(triangle["vertices"][0], camera)
+            p2_result = project_3d_to_2d(triangle["vertices"][1], camera)
+            p3_result = project_3d_to_2d(triangle["vertices"][2], camera)
 
             # Only render if all vertices are visible
-            if p1 and p2 and p3:
-                rasterize_triangle(renderer, p1, p2, p3, triangle["color"])
+            if p1_result and p2_result and p3_result:
+                # Extract 2D positions and depths
+                p1, z1 = (p1_result[0], p1_result[1]), p1_result[2]
+                p2, z2 = (p2_result[0], p2_result[1]), p2_result[2]
+                p3, z3 = (p3_result[0], p3_result[1]), p3_result[2]
+
+                rasterize_triangle_with_depth(
+                    renderer, p1, p2, p3, z1, z2, z3, triangle["color"]
+                )
 
     # Draw wireframe grid
     if RENDER_WIREFRAME:
@@ -552,16 +404,23 @@ def draw_vertical_plane(renderer, obj_data, camera):
     if RENDER_TRIANGLES:
         triangles = create_vertical_plane_triangles(obj_data["size"])
         for triangle in triangles:
-            # Project triangle vertices to 2D
-            p1 = project_3d_to_2d(triangle["vertices"][0], camera)
-            p2 = project_3d_to_2d(triangle["vertices"][1], camera)
-            p3 = project_3d_to_2d(triangle["vertices"][2], camera)
+            # Project triangle vertices to 2D with depth
+            p1_result = project_3d_to_2d(triangle["vertices"][0], camera)
+            p2_result = project_3d_to_2d(triangle["vertices"][1], camera)
+            p3_result = project_3d_to_2d(triangle["vertices"][2], camera)
 
             # Only render if all vertices are visible
-            if p1 and p2 and p3:
+            if p1_result and p2_result and p3_result:
+                # Extract 2D positions and depths
+                p1, z1 = (p1_result[0], p1_result[1]), p1_result[2]
+                p2, z2 = (p2_result[0], p2_result[1]), p2_result[2]
+                p3, z3 = (p3_result[0], p3_result[1]), p3_result[2]
+
                 # Apply object color tint to triangle color
                 tinted_color = apply_color_tint(triangle["color"], obj_data["color"])
-                rasterize_triangle(renderer, p1, p2, p3, tinted_color)
+                rasterize_triangle_with_depth(
+                    renderer, p1, p2, p3, z1, z2, z3, tinted_color
+                )
 
 
 def draw_axes(renderer, camera):
@@ -621,8 +480,13 @@ orbit_speed = 0.5  # Rotation speed
 
 
 # Choose which projection method to use:
-project_3d_to_2d = project_3d_to_2d_direct  # Use direct calculation
-# project_3d_to_2d = project_3d_to_2d_via_matrix   # Use matrix method
+def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
+    return project_3d_to_2d_direct(point, camera, width, height)
+
+
+# Alternative: Use matrix method
+# def project_3d_to_2d(point, camera, width=WIDTH, height=HEIGHT):
+#     return project_3d_to_2d_via_matrix(point, camera, width, height)
 
 # Main loop
 running = True
@@ -641,7 +505,7 @@ while running:
             running = False
 
     if fps_counter.update():
-        print(f"3D Scene - FPS: {fps_counter.get_fps():.1f}")
+        logging.info("3D Scene - FPS: %.1f", fps_counter.get_fps())
 
     # Calculate current time and camera angle
     current_time = time.time() - start_time
@@ -649,7 +513,8 @@ while running:
     # Update camera position to orbit around the scene
     camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
 
-    # Clear screen
+    # Clear screen and z-buffer
+    clear_z_buffer()
     renderer.color = BLACK
     renderer.clear()
 
