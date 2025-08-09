@@ -18,24 +18,22 @@ the one that is closest to the camera in the z axis.
 
 ### What is next?
 
-I want to eventually want to move to shaders which will be the final step in
-the journey, but for that I need a couple of other things to make a successfull
-transition to shaders.
+I want to move to shaders. 
+At a high level, what we need to do is to first migrate rasterization to
+shaders (the cpu takes care of that). Once that works, then we can migrate
+the projections. frament shader (rasterization), vertex shader (projections).
 
-Things I have:
+It seems we can also use the GPU for the z-buffer algorithm.
+Also, I can load all the geometries at once to the GPU.
 
-  1. ✅ Geometry - Vertices and triangles
-  2. ✅ Transformations - World → View → Projection → Screen
-  3. ✅ Rasterization - Fill triangles pixel by pixel
-  4. ✅ Depth Testing - Z-buffer for occlusion
+Concrete steps:
 
-What I need before moving to shaders:
-  5. - Surface Normals - Know which way surfaces face 
-    This will let us implement backface culling.
-  6. - Backface Culling - Skip invisible triangles
-
-When I have 5 and 6, I can then move to shaders which will implement most of the points there but 
-using the GPU (parallel processing) instead of the CPU.
+1. Standlone shader (SDL2 + moderngl) to test the tooling
+2. Add OpenGL context to main 
+  (USE_GPU_RENDERING): CPU vs GPU rasterization
+  (USE_GPU_PROJECTIONS): CPU vs GPU transformations
+3. Send all scene geometry to GPU
+4. Enable depth test via GPU 
 
 ### Explaination of the z-buffering technique:
 
