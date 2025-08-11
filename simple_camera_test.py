@@ -48,8 +48,8 @@ def create_triangle():
         [
             # Position in world units (meters)    Color (r,g,b)
             [-5.0, -5.0, -10.0, 1.0, 0.0, 0.0],  # Red - 5m left, 5m down, 10m away
-            [5.0, -5.0, -10.0, 0.0, 1.0, 0.0],  # Green - 5m right, 5m down, 10m away
-            [0.0, 5.0, -10.0, 0.0, 0.0, 1.0],  # Blue - center, 5m up, 10m away
+            [5.0, -5.0, -10.0, 1.0, 0.0, 0.0],  # Green - 5m right, 5m down, 10m away
+            [0.0, 5.0, -10.0, 1.0, 0.0, 0.0],  # Blue - center, 5m up, 10m away
         ],
         dtype=np.float32,
     )
