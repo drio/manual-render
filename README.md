@@ -1,5 +1,94 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
 
+## 09: Basic shaders
+
+I deciced to move to shaders despite I don't have textures. 
+
+Key concepts in shaders: We are going to compute vertex transformations and pixel colors in parallel,
+using the GPU. 
+
+For this to work, there is a lot of boiler plate we have to do.
+
+We have been:
+
+1. Projecting vertices from world coordinates to screen coordinates using matrices. We were
+multiplying our vertices by the transform matrix, vertex by vertex.
+
+2. Then we were determining the pixel color on each pixel in the screen.
+
+In a traditional CPU approach we:
+
+1. Data Flow Setup (like traditional pipeline input/output)
+
+- Traditional: Function parameters and return values
+- GPU: Vertex Buffer Objects (VBO) - input data in GPU memory
+    -> a Chunk of GPU memory that contains vertex data
+    -> raw bytes
+    -> numbers, poisitions, colors, normals
+- GPU: Vertex Array Objects (VAO) - describes data layout
+    -> Innstructions on how to interpret the VBO data.
+
+2. Processing Programs (like traditional functions)
+
+- Traditional: CPU functions that process one item
+- GPU: Vertex Shader - transforms each vertex position
+- GPU: Fragment Shader - determines each pixel color
+
+3. Control Parameters (like traditional function arguments)
+
+- Traditional: Function parameters passed by value
+- GPU: Uniforms - global parameters sent to all shader instances
+- Example: mvp_matrix transforms all vertices the same way
+
+4. Execution Context (like traditional runtime environment)
+
+- Traditional: CPU process, memory, stack
+- GPU: OpenGL Context - manages GPU state and resources
+
+---
+Key Difference: Parallelism
+
+Traditional Sequential:
+results = []
+for vertex in vertices:
+  transformed = transform_vertex(vertex, matrix)
+  results.append(transformed)
+
+GPU Shader Parallel:
+// This runs simultaneously on hundreds of vertices
+gl_Position = mvp_matrix * vec4(in_position, 1.0);
+
+The file `simple_camera_test.py` contains a simple 3d graphics program that uses shaders.
+The purpose was to make sure all the components work and to get my head around before
+migrating our current pipeline to shaders. This file has:
+
+1. Data Setup → setup_vertex_data() - Creates VBO/VAO
+2. Programs → create_shader_program() - Compiles shaders
+3. Parameters → program['mvp_matrix'].write() - Sends uniforms
+4. Context → setup_window_and_context() - Creates GPU connection
+5. Execute → vao.render() - Runs shaders on all data in parallel
+
+Two other important concepts in shaders. 
+Uniforms and Attributes.
+That is data that will be available per each instance of the shader. 
+Example, vertex shader will have:
+
+in vec3 in_position;
+in vec3 in_color;
+
+uniform mat4 mvp_matrix;
+
+mpv_matrix is the same per all instances of the vertex shader.
+in_position and in_color is different per each fragment shader.
+
+Another very important piece is that now we don't have a real camera object, when we
+are designing the scene, the camera determines how we are going to part of the world we 
+are focusing in in our screen. We encode that information in the projection matrix.
+
+In the example, at the beginning, we use the identity matrix.
+
+
+
 ## 08: FPS and z-buffering
 
 My FPS is 1 or 2 with rasterization enabled. Expected but at least we can measure it now.
