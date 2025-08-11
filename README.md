@@ -81,13 +81,10 @@ uniform mat4 mvp_matrix;
 mpv_matrix is the same per all instances of the vertex shader.
 in_position and in_color is different per each fragment shader.
 
-Another very important piece is that now we don't have a real camera object, when we
-are designing the scene, the camera determines how we are going to part of the world we 
-are focusing in in our screen. We encode that information in the projection matrix.
+## What is next?
 
-In the example, at the beginning, we use the identity matrix.
-
-
+I think I know how shaders work now and I have the necessary components to make them work
+with my tooling. So next step is trying to migrate the CPU based pipeline to shaders (GPU based).
 
 ## 08: FPS and z-buffering
 
