@@ -43,16 +43,97 @@ void main() {
 
 
 def create_triangle():
-    """Simple triangle - same as working shader_test.py"""
+    """Triangle in WORLD COORDINATES - real 3D space with meaningful units"""
     vertices = np.array(
         [
-            [-0.5, -0.5, 0.0, 1.0, 0.0, 0.0],  # Red
-            [0.5, -0.5, 0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.5, 0.0, 1.0, 0.0, 0.0],
+            # Position in world units (meters)    Color (r,g,b)
+            [-5.0, -5.0, -10.0, 1.0, 0.0, 0.0],  # Red - 5m left, 5m down, 10m away
+            [5.0, -5.0, -10.0, 0.0, 1.0, 0.0],  # Green - 5m right, 5m down, 10m away
+            [0.0, 5.0, -10.0, 0.0, 0.0, 1.0],  # Blue - center, 5m up, 10m away
         ],
         dtype=np.float32,
     )
     return vertices
+
+
+def create_model_matrix(translation=(0, 0, 0), rotation_angle=0.0):
+    """
+    MODEL MATRIX: Transforms object from local space to world space
+    - Controls where the object is positioned in the world
+    - Controls how the object is rotated/scaled
+    """
+    tx, ty, tz = translation
+
+    # Rotation around Z-axis (2D rotation in XY plane)
+    cos_r, sin_r = math.cos(rotation_angle), math.sin(rotation_angle)
+
+    model_matrix = np.array(
+        [
+            [cos_r, -sin_r, 0, tx],  # X-axis transformation + translation
+            [sin_r, cos_r, 0, ty],  # Y-axis transformation + translation
+            [0, 0, 1, tz],  # Z-axis transformation + translation
+            [0, 0, 0, 1],  # Homogeneous coordinate
+        ],
+        dtype=np.float32,
+    )
+
+    return model_matrix
+
+
+def create_view_matrix(camera_pos=(0, 0, 0), target_pos=(0, 0, -1)):
+    """
+    VIEW MATRIX: Transforms from world space to camera/eye space
+    - Simulates where the camera is positioned in the world
+    - Simulates what direction the camera is looking
+    """
+    camera_pos = np.array(camera_pos, dtype=np.float32)
+    target_pos = np.array(target_pos, dtype=np.float32)
+
+    # Calculate camera coordinate system
+    forward = target_pos - camera_pos
+    forward = forward / np.linalg.norm(forward)
+
+    world_up = np.array([0.0, 1.0, 0.0])
+    right = np.cross(forward, world_up)
+    right = right / np.linalg.norm(right)
+
+    up = np.cross(right, forward)
+
+    # Create view matrix (inverse of camera transform)
+    view_matrix = np.array(
+        [
+            [right[0], right[1], right[2], -np.dot(right, camera_pos)],
+            [up[0], up[1], up[2], -np.dot(up, camera_pos)],
+            [-forward[0], -forward[1], -forward[2], np.dot(forward, camera_pos)],
+            [0, 0, 0, 1],
+        ],
+        dtype=np.float32,
+    )
+
+    return view_matrix
+
+
+def create_projection_matrix(fov_degrees=45, aspect_ratio=4 / 3, near=0.1, far=100.0):
+    """
+    PROJECTION MATRIX: Transforms from camera space to clip space (-1 to +1)
+    - Controls field of view (zoom level)
+    - Controls aspect ratio (screen shape)
+    - Controls near/far clipping planes (what's visible)
+    """
+    fov_radians = math.radians(fov_degrees)
+    f = 1.0 / math.tan(fov_radians / 2.0)
+
+    projection_matrix = np.array(
+        [
+            [f / aspect_ratio, 0, 0, 0],
+            [0, f, 0, 0],
+            [0, 0, -(far + near) / (far - near), -2 * far * near / (far - near)],
+            [0, 0, -1, 0],
+        ],
+        dtype=np.float32,
+    )
+
+    return projection_matrix
 
 
 def setup_window_and_context():
@@ -187,39 +268,48 @@ def run_render_loop(window, ctx, program, vao):
 
         current_time = time.time() - start_time
 
-        # Create different transformation matrices for learning
+        # =============================================================
+        # EXPLICIT MATRIX COMPOSITION: M * V * P
+        # World Coordinates → Screen Coordinates via 3 transformations
+        # =============================================================
+
+        # STEP 1: MODEL MATRIX - Position/rotate object in world space
         if test_phase == 0:
-            # Test 1: Identity matrix - no transformation
-            mvp_matrix = identity_matrix
+            # Test 1: Identity - object stays at original world position
+            model_matrix = np.eye(4, dtype=np.float32)
 
         elif test_phase == 1:
-            # Test 2: Translation matrix - move triangle left/right
-            translation = math.sin(current_time) * 0.5
-            mvp_matrix = np.array(
-                [
-                    [1, 0, 0, translation],  # X translation in last column
-                    [0, 1, 0, 0],  # Y unchanged
-                    [0, 0, 1, 0],  # Z unchanged
-                    [0, 0, 0, 1],  # Homogeneous coordinate
-                ],
-                dtype=np.float32,
-            )
+            # Test 2: Translation - move object in world space (smaller movement)
+            world_translation = (
+                math.sin(current_time) * 2.0,  # Reduced from 3.0 to 2.0 meters
+                0,
+                0,
+            )  # Move 2 meters left/right
+            model_matrix = create_model_matrix(translation=world_translation)
 
         else:
-            # Test 3: Rotation matrix - rotate triangle around Z axis
-            angle = current_time * 2.0
-            cos_a, sin_a = math.cos(angle), math.sin(angle)
-            mvp_matrix = np.array(
-                [
-                    [cos_a, -sin_a, 0, 0],  # 2D rotation matrix
-                    [sin_a, cos_a, 0, 0],  # in 4x4 homogeneous form
-                    [0, 0, 1, 0],
-                    [0, 0, 0, 1],
-                ],
-                dtype=np.float32,
-            )
+            # Test 3: Rotation - rotate object around its center (Z-axis)
+            rotation_angle = current_time * 0.5  # Slower rotation
+            model_matrix = create_model_matrix(rotation_angle=rotation_angle)
 
-        # RENDER FRAME:
+        # STEP 2: VIEW MATRIX - Position camera in world space
+        camera_pos = (0, 0, 0)  # Camera at origin
+        target_pos = (0, 0, -10)  # Looking at triangle (10 meters away in -Z)
+        view_matrix = create_view_matrix(camera_pos, target_pos)
+
+        # STEP 3: PROJECTION MATRIX - 3D world → 2D screen projection
+        aspect_ratio = 800 / 600  # Window width/height
+        projection_matrix = create_projection_matrix(
+            fov_degrees=90,  # Wider field of view to see more
+            aspect_ratio=aspect_ratio,
+            near=1.0,  # 1m closest visible (triangle is at 10m)
+            far=100.0,  # 100m farthest visible
+        )
+
+        # STEP 4: COMPOSE FINAL MVP MATRIX
+        # Order matters: Projection * View * Model
+        mvp_matrix = projection_matrix @ view_matrix @ model_matrix
+
         # 1. Send transformation matrix to GPU shader
         program["mvp_matrix"].write(mvp_matrix.tobytes())
 
@@ -280,4 +370,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
