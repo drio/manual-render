@@ -69,8 +69,7 @@ migrating our current pipeline to shaders. This file has:
 5. Execute → vao.render() - Runs shaders on all data in parallel
 
 Two other important concepts in shaders. 
-Uniforms and Attributes.
-That is data that will be available per each instance of the shader. 
+Uniforms (same data available to all the shader instances) and Varying (available per vertex).
 Example, vertex shader will have:
 
 in vec3 in_position;
