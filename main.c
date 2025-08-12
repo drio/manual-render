@@ -1,6 +1,21 @@
 #include "raylib.h"
 #include <math.h>
 
+#ifdef PLATFORM_WEB
+#include <emscripten/emscripten.h>
+#endif
+
+// Global variable to control FPS display
+int showFPS = 1;
+
+#ifdef PLATFORM_WEB
+// Function that JavaScript can call to toggle FPS
+EMSCRIPTEN_KEEPALIVE
+void toggleFPS() {
+    showFPS = !showFPS;
+}
+#endif
+
 int main(void)
 {
     // Window initialization
@@ -76,8 +91,10 @@ int main(void)
                 
             EndMode3D();
             
-            // Draw FPS in top-right corner (2D text)
-            DrawText(TextFormat("FPS: %i", GetFPS()), screenWidth - 100, 10, 24, DARKGRAY);
+            // Draw FPS in top-right corner (2D text) if enabled
+            if (showFPS) {
+                DrawText(TextFormat("FPS: %i", GetFPS()), screenWidth - 100, 10, 24, DARKGRAY);
+            }
             
             // Additional debug info
             DrawText("X axis", 10, 35, 24, RED);

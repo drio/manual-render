@@ -20,15 +20,45 @@
 		canvas {
 			border: 2px solid white;
 		}
+
+		.controls {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			z-index: 100;
+		}
+
+		button {
+			padding: 10px 15px;
+			background: #444;
+			color: white;
+			border: 1px solid #666;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+
+		button:hover {
+			background: #555;
+		}
 	</style>
 </head>
 
 <body>
+	<div class="controls">
+		<button id="toggleFPS" onclick="toggleFPSDisplay()">Toggle FPS</button>
+	</div>
 	<canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 	<script>
 		var Module = {
 			canvas: document.getElementById('canvas')
 		};
+
+		// JavaScript function to call C function
+		function toggleFPSDisplay() {
+			if (Module._toggleFPS) {
+				Module._toggleFPS();
+			}
+		}
 	</script>
 	<script src="index.js"></script>
 </body>
