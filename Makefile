@@ -25,6 +25,7 @@ web: main.c
 		-DPLATFORM_WEB \
 	    -g4 -s MINIFY_HTML=0  \
 		-I $(HOME)/dev/github.com/raysan5/raylib-5.5/src
+	cp html/index.html web/
 
 
 # Serve the web version locally (requires Python)
