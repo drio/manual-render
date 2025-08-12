@@ -21,11 +21,10 @@ web: main.c
 		-s USE_GLFW=3 \
 		-s ASYNCIFY \
 		-s TOTAL_MEMORY=67108864 \
-		#-s FORCE_FILESYSTEM=1 \
+		-s FORCE_FILESYSTEM=1 \
 		-DPLATFORM_WEB \
 	    -g4 -s MINIFY_HTML=0  \
 		-I $(HOME)/dev/github.com/raysan5/raylib-5.5/src
-	cp html/index.html web/
 
 
 # Serve the web version locally (requires Python)
