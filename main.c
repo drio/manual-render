@@ -76,13 +76,13 @@ int main(void)
                 
             EndMode3D();
             
-            // Draw FPS in top-left corner (2D text)
-            DrawFPS(10, 10);
+            // Draw FPS in top-right corner (2D text)
+            DrawText(TextFormat("FPS: %i", GetFPS()), screenWidth - 100, 10, 24, DARKGRAY);
             
             // Additional debug info
-            DrawText("X axis", 10, 35, 20, RED);
-            DrawText("Y axis", 10, 60, 16, GREEN);
-            DrawText("Z axis", 10, 80, 16, BLUE);
+            DrawText("X axis", 10, 35, 24, RED);
+            DrawText("Y axis", 10, 60, 24, GREEN);
+            DrawText("Z axis", 10, 80, 24, BLUE);
             
         EndDrawing();
     }
