@@ -41,20 +41,36 @@ PURE_GREEN_COLOR = (0, 255, 0)  # Y axis
 PURE_BLUE_COLOR = (0, 0, 255)  # Z axis
 
 
-# Create window and renderer
+def setup_display_and_renderer():
+    """
+    RENDER STEP 1: Create display surface and rendering context
+    This creates the output surface - will be replaced with OpenGL context later
+    """
+    print("=== RENDER STEP 1: Setting up display and rendering context ===")
+
+    WIDTH, HEIGHT = 800, 600
+    X, Y = 3025, 48  # Window position
+
+    # Create window
+    window = sdl2.ext.Window("3D Scene with Ground Plane - SDL2", size=(WIDTH, HEIGHT))
+    sdl2.SDL_SetWindowPosition(window.window, X, Y)
+    window.show()
+
+    # Create renderer (will become OpenGL context later)
+    renderer = sdl2.ext.Renderer(window)
+
+    # Initialize z-buffer for depth testing
+    init_z_buffer(WIDTH, HEIGHT)
+
+    print(f"✓ Display created: {WIDTH}x{HEIGHT}")
+    print("✓ Software renderer created (will become OpenGL context)")
+    print("✓ Z-buffer initialized for depth testing")
+
+    return window, renderer, WIDTH, HEIGHT
+
+
+# Create window and renderer - will be moved to main() function
 WIDTH, HEIGHT = 800, 600
-
-# Initialize z-buffer for depth testing
-init_z_buffer(WIDTH, HEIGHT)
-X = 3025
-Y = 48
-window = sdl2.ext.Window("3D Scene with Ground Plane - SDL2", size=(WIDTH, HEIGHT))
-sdl2.SDL_SetWindowPosition(window.window, X, Y)
-
-window.show()
-
-# Create a renderer for drawing
-renderer = sdl2.ext.Renderer(window)
 
 
 class Camera:
@@ -226,43 +242,55 @@ def create_vertical_plane_triangles(size=100):
     return triangles
 
 
-# Unified scene objects data structure
-scene_objects = [
-    {
-        "type": "ground_plane",
-        "pos": [0, 0, 0],
-        "size": 400,
-        "spacing": 50,
-        "color": DARK_GRAY_COLOR,
-        "name": "ground",
-    },
-    # {
-    #     "type": "cube",
-    #     "pos": [0, -50, 0],
-    #     "scale": 50,
-    #     "color": WHITE_COLOR,
-    #     "name": "center_cube",
-    # },
-    {
-        "type": "vertical_plane",
-        "pos": [0, 0, 0],
-        "size": 100,
-        "color": RED_COLOR,
-        "name": "front_plane",
-    },
-    {
-        "type": "vertical_plane",
-        "pos": [0, 0, -150],  # Behind the first plane
-        "size": 80,
-        "color": BLUE_COLOR,
-        "name": "back_plane",
-    },
-    {
-        "type": "axes",
-        "pos": [0, 0, 0],
-        "name": "coordinate_axes",
-    },
-]
+def create_scene_objects():
+    """
+    RENDER STEP 2: Create 3D scene geometry and objects
+    This defines all the objects that will be rendered - will work with both CPU and GPU rendering
+    """
+    print("=== RENDER STEP 2: Creating 3D scene objects ===")
+
+    scene_objects = [
+        {
+            "type": "ground_plane",
+            "pos": [0, 0, 0],
+            "size": 400,
+            "spacing": 50,
+            "color": DARK_GRAY_COLOR,
+            "name": "ground",
+        },
+        # {
+        #     "type": "cube",
+        #     "pos": [0, -50, 0],
+        #     "scale": 50,
+        #     "color": WHITE_COLOR,
+        #     "name": "center_cube",
+        # },
+        {
+            "type": "vertical_plane",
+            "pos": [0, 0, 0],
+            "size": 100,
+            "color": RED_COLOR,
+            "name": "front_plane",
+        },
+        {
+            "type": "vertical_plane",
+            "pos": [0, 0, -150],  # Behind the first plane
+            "size": 80,
+            "color": BLUE_COLOR,
+            "name": "back_plane",
+        },
+        {
+            "type": "axes",
+            "pos": [0, 0, 0],
+            "name": "coordinate_axes",
+        },
+    ]
+
+    print(f"✓ Created {len(scene_objects)} scene objects")
+    for obj in scene_objects:
+        print(f"  - {obj['name']}: {obj['type']}")
+
+    return scene_objects
 
 
 def draw_circle_filled(renderer, x, y, radius):
@@ -390,7 +418,7 @@ def draw_cube(renderer, obj_data, camera):
                 )
 
 
-def render_scene(renderer, camera):
+def render_scene(renderer, camera, scene_objects):
     """Render all objects in the scene based on their type"""
     for obj in scene_objects:
         if obj["type"] == "ground_plane":
@@ -485,14 +513,32 @@ USE_MATRIX_PROJECTION = True  # True for matrix method, False for direct method
 # Colors
 BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
-# Camera positioned above ground, looking at cubes above ground
-# camera = Camera(position=[200, -300, 800], target=[0, 0, 0], focal_length=600)
-camera = Camera(position=[400, 200, 800], target=[0, 0, 0], focal_length=600)
 
-# Orbit parameters that make sense
-orbit_radius = 800  # Distance from center
-orbit_height = 200  # Y position ABOVE ground
-orbit_speed = 0.5  # Rotation speed
+def setup_camera_and_projection():
+    """
+    RENDER STEP 3: Create camera and configure projection settings
+    This sets up the viewpoint and projection method - will work with both CPU and GPU rendering
+    """
+    print("=== RENDER STEP 3: Setting up camera and projection ===")
+
+    # Create camera positioned above ground, looking at scene center
+    camera = Camera(position=[400, 200, 800], target=[0, 0, 0], focal_length=600)
+
+    # Orbit parameters for camera animation
+    orbit_params = {
+        "radius": 800,  # Distance from center
+        "height": 200,  # Y position ABOVE ground
+        "speed": 0.5,  # Rotation speed
+    }
+
+    print(f"✓ Camera created at position: {camera.position}")
+    print(f"✓ Camera target: {camera.target}")
+    print(f"✓ Camera focal length: {camera.focal_length}")
+    print(
+        f"✓ Orbit parameters: radius={orbit_params['radius']}, height={orbit_params['height']}"
+    )
+
+    return camera, orbit_params
 
 
 # Projection method selection based on configuration
@@ -523,45 +569,100 @@ def render_triangle(renderer, p1, p2, p3, color, z1=None, z2=None, z3=None):
         rasterize_triangle(renderer, p1_2d, p2_2d, p3_2d, color)
 
 
-# Main loop
-running = True
-event = sdl2.SDL_Event()
-start_time = time.time()  # Use real time for smooth animation
+def run_main_loop(window, renderer, camera, orbit_params, scene_objects):
+    """
+    RENDER STEP 4: Main rendering loop
+    This handles input, animation, and frame rendering - will work with both CPU and GPU rendering
+    """
+    print("=== RENDER STEP 4: Starting main rendering loop ===")
+    print("Controls: Close window to exit")
+    print("Camera will orbit around the scene")
 
-fps_counter = FPSCounter()
+    running = True
+    event = sdl2.SDL_Event()
+    start_time = time.time()
+    fps_counter = FPSCounter()
 
-# X axis (Red): Left ← → Right (negative X is left, positive X is right)
-# Y axis (Green): Down ← → Up (negative Y is down, positive Y is up)
-# Z axis (Blue): Away ← → Toward Camera (negative Z is away/back, positive Z is toward/front)
-while running:
-    # Handle events
-    while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
-        if event.type == sdl2.SDL_QUIT:
-            running = False
+    # Colors
+    BLACK = sdl2.ext.Color(0, 0, 0, 255)
 
-    if fps_counter.update():
-        logging.info("3D Scene - FPS: %.1f", fps_counter.get_fps())
+    # X axis (Red): Left ← → Right (negative X is left, positive X is right)
+    # Y axis (Green): Down ← → Up (negative Y is down, positive Y is up)
+    # Z axis (Blue): Away ← → Toward Camera (negative Z is away/back, positive Z is toward/front)
 
-    # Calculate current time and camera angle
-    current_time = time.time() - start_time
-    orbit_angle = current_time * orbit_speed
-    # Update camera position to orbit around the scene
-    camera.update_orbit(orbit_angle, orbit_radius, orbit_height)
+    while running:
+        # Handle input events
+        while sdl2.SDL_PollEvent(ctypes.byref(event)) != 0:
+            if event.type == sdl2.SDL_QUIT:
+                running = False
 
-    # Clear screen and z-buffer (if using z-buffer)
-    if USE_Z_BUFFER:
-        clear_z_buffer()
-    renderer.color = BLACK
-    renderer.clear()
+        # Update FPS counter
+        if fps_counter.update():
+            logging.info("3D Scene - FPS: %.1f", fps_counter.get_fps())
 
-    # Render all scene objects
-    render_scene(renderer, camera)
+        # Calculate current time and animate camera
+        current_time = time.time() - start_time
+        orbit_angle = current_time * orbit_params["speed"]
+        camera.update_orbit(orbit_angle, orbit_params["radius"], orbit_params["height"])
 
-    # Present the frame
-    renderer.present()
+        # Clear screen and z-buffer (if using z-buffer)
+        if USE_Z_BUFFER:
+            clear_z_buffer()
+        renderer.color = BLACK
+        renderer.clear()
 
-    # Control frame rate (roughly 60 FPS)
-    sdl2.SDL_Delay(16)
+        # Render all scene objects (CPU rasterization - will become GPU draw calls)
+        render_scene(renderer, camera, scene_objects)
 
-# Cleanup
-sdl2.ext.quit()
+        # Present the frame
+        renderer.present()
+
+        # Control frame rate (roughly 60 FPS)
+        sdl2.SDL_Delay(16)
+
+    print("✓ Main loop finished")
+
+
+def cleanup():
+    """Clean up SDL2 resources"""
+    print("=== Cleaning up resources ===")
+    sdl2.ext.quit()
+    print("✓ SDL2 resources cleaned up")
+
+
+def main():
+    """
+    Main function demonstrating the 4-step CPU rendering pipeline:
+    1. Setup display and rendering context
+    2. Create 3D scene geometry and objects
+    3. Setup camera and projection settings
+    4. Run main rendering loop
+
+    This structure will make it easy to transition to OpenGL later
+    """
+    print("=== 3D SCENE RENDERER - CPU PIPELINE DEMO ===")
+    print("This demonstrates the 4 essential steps for 3D rendering")
+    print("(Structure designed to easily transition to OpenGL/GPU rendering)\n")
+
+    try:
+        # Step 1: Create display surface and rendering context
+        window, renderer, width, height = setup_display_and_renderer()
+
+        # Step 2: Create 3D scene with objects to render
+        scene_objects = create_scene_objects()
+
+        # Step 3: Setup camera and configure projection
+        camera, orbit_params = setup_camera_and_projection()
+
+        # Step 4: Run the main rendering loop
+        run_main_loop(window, renderer, camera, orbit_params, scene_objects)
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        # Always clean up resources
+        cleanup()
+
+
+if __name__ == "__main__":
+    main()
