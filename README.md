@@ -1,4 +1,37 @@
 This is a repo to learn the math behind rendering 2D/3D scenes.
+What I did is build a basic 3D graphics engine from first principles,
+without abstractions. 
+
+The README is divided in sections that capture the different progress I made. I
+wanted to work on this to understand how things like
+[manim](https://www.manim.community) work.
+
+**The key things I learned are:** 
+
+We're working in 2D/3D coordinate systems of our own (our world). It is when
+you project to something (screen) that we convert from one coordinate system to
+another.
+
+We draw with vectors, which define points in space. Triangles define the
+surfaces of 3D objects, while vectors define the properties and transformations
+applied to those surfaces. During rendering, you use vectors to transform
+triangle vertices, calculate how light bounces off triangle surfaces (using
+normal vectors), and determine what color each pixel should be.
+
+GPUs massively speed up rendering by performing computations in
+parallel. To apply transformations to triangle vertices, those 
+transformations run on thousands of vertex shaders (code that the GPU understands).
+Vertex shaders are for computing new vertex values. But you also want to compute
+the value of each pixel on the screen. Fragment shaders do that. 
+
+Writing those shaders and "linking" them from scratch to your main code is a
+bit convoluted, but the library you use for rendering (raylib) provides helpers
+to let you focus on only writing GLSL (OpenGL Shading Language).
+
+Interestingly, there are other types of shaders. For example: compute shaders,
+where you can use the GPU to perform more generic computations. Those are used
+for machine learning and other contexts that require generic computation.
+
 
 ## 09: Basic shaders
 
